@@ -384,44 +384,25 @@ loadPrices();
   .overlay {
     display: none;
     position: fixed;
-    inset: 0;
-    background: rgba(10,9,8,0.55);
-    z-index: 200;
-    backdrop-filter: blur(2px);
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 9999;
   }
   .overlay.open { display: block; }
   .modal {
     position: fixed;
-    left: 0; right: 0; bottom: 0;
-    background: var(--bg-card);
-    border-radius: var(--radius) var(--radius) 0 0;
+    bottom: 0; left: 0; right: 0;
     width: 100%;
-    max-height: 94vh;
+    max-height: 92vh;
     overflow-y: auto;
-    box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
-    animation: slideUp 0.22s ease;
-    z-index: 201;
+    background: #ffffff;
+    border-radius: 16px 16px 0 0;
+    z-index: 10000;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
   }
-  .modal-sm {
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-  @keyframes slideUp {
-    from { transform: translateY(30px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
-  }
-  @media (min-width: 680px) {
-    .overlay { display: none; align-items: center; justify-content: center; padding: 1.5rem; }
-    .overlay.open { display: flex; }
-    .modal {
-      position: static;
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 520px;
-      max-height: 90vh;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-    }
-    .modal-sm { max-width: 400px; }
-  }
+  .modal-sm { max-width: 100%; }
   .modal-head {
     display: flex;
     align-items: center;
@@ -645,15 +626,6 @@ loadPrices();
   </div>
 </header>
 
-<!-- PROMO BANNER -->
-<div style="background:linear-gradient(135deg,#c0392b 0%,#e74c3c 50%,#c0392b 100%);padding:13px 1.5rem;display:flex;align-items:center;justify-content:center;gap:10px;position:sticky;top:60px;z-index:99;box-shadow:0 2px 8px rgba(192,57,43,0.5)">
-  <span style="font-size:22px">🎁</span>
-  <div style="text-align:center">
-    <div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:0.02em;line-height:1.2">БЕЗКОШТОВНО ДЛЯ ПРОДАВЦІВ ШИН ТА ДИСКІВ</div>
-    <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);margin-top:2px">Подавайте оголошення без оплати до 31 серпня 2026 року</div>
-  </div>
-  <span style="font-size:22px">🔥</span>
-</div>
 <div class="hero" style="position:relative">
   <div class="hero-title">Ринок шин, дисків та авто-послуг · Звягель</div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
