@@ -1372,7 +1372,6 @@ const SVC_KEYWORDS = [
   'Заміна скла','Ремонт фар','Карбон','Чіп-тюнінг','Промивка форсунок',
 ];
 let svcSelectedKeywords = [];
-let svcPhotos = [];
 
 function initSvcKeywords(){
   const wrap = document.getElementById('svcKeywordBtns');
@@ -1398,17 +1397,6 @@ function toggleSvcKeyword(kw, btn){
   // update publish button
   const pubBtn = document.querySelector('[onclick="submitAdWithBlockCheck()"]');
   if(pubBtn && adCat==='service') pubBtn.textContent = `✓ Опублікувати · ${price} грн`;
-}
-
-function handleSvcPhotos(input){
-  const files = Array.from(input.files);
-  const remaining = 5-svcPhotos.length;
-  files.slice(0,remaining).forEach(f=>{
-    const reader = new FileReader();
-    reader.onload = e => { svcPhotos.push(e.target.result); renderSvcPhotoGrid(); };
-    reader.readAsDataURL(f);
-  });
-  input.value='';
 }
 
 function renderSvcPhotoGrid(){
@@ -1850,20 +1838,53 @@ function attachAntiBad(elId, fieldName){
 ['aBrandCustom','aSizeCustom','aDesc','aSvcName','aSvcAddr','aSvcHours','aSvcDesc',
  'regName','loginPhone','regPhone','aCity'].forEach(id => attachAntiBad(id, id));
 
+let adPhotos=[];
+let svcPhotos=[];
 
-function handlePhotos(input){
+// Стиснення фото перед збереженням (макс 800px, якість 75%)
+function compressPhoto(file, maxW=800, quality=0.75){
+  return new Promise(res=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const canvas=document.createElement('canvas');
+        let w=img.width, h=img.height;
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        res(canvas.toDataURL('image/jpeg',quality));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhotos(input){
   const files=Array.from(input.files);
   const remaining=5-adPhotos.length;
   const toAdd=files.slice(0,remaining);
   if(files.length>remaining) toast(`Максимум 5 фото. Додано перших ${toAdd.length}`);
-  toAdd.forEach(f=>{
-    const reader=new FileReader();
-    reader.onload=e=>{
-      adPhotos.push(e.target.result);
-      renderPhotoGrid();
-    };
-    reader.readAsDataURL(f);
-  });
+  for(const f of toAdd){
+    toast('Стискаємо фото...');
+    const compressed = await compressPhoto(f);
+    adPhotos.push(compressed);
+    renderPhotoGrid();
+  }
+  input.value='';
+}
+
+async function handleSvcPhotos(input){
+  const files=Array.from(input.files);
+  const remaining=5-svcPhotos.length;
+  const toAdd=files.slice(0,remaining);
+  if(files.length>remaining) toast(`Максимум 5 фото. Додано перших ${toAdd.length}`);
+  for(const f of toAdd){
+    const compressed = await compressPhoto(f);
+    svcPhotos.push(compressed);
+    renderSvcPhotoGrid();
+  }
   input.value='';
 }
 
