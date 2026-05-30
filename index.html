@@ -2437,6 +2437,7 @@ document.querySelectorAll('.overlay').forEach(el=>{
         <button class="admin-tab" id="tabAdsBtn" onclick="switchAdminTab('ads')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Оголошення</button>
         <button class="admin-tab" id="tabPricesBtn" onclick="switchAdminTab('prices')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">💰 Ціни</button>
         <button class="admin-tab" id="tabBannerBtn" onclick="switchAdminTab('banner')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">🖼 Банер</button>
+        <button class="admin-tab" id="tabHelpBtn" onclick="switchAdminTab('help')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">📖 Мануал</button>
       </div>
 
       <!-- USERS TAB -->
@@ -2530,11 +2531,102 @@ document.querySelectorAll('.overlay').forEach(el=>{
           <button onclick="saveBannerSettings(true)" style="flex:1;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:13px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif">💾 Зберегти</button>
         </div>
       </div>
-    </div>
-  </div>
-</div>
+      <!-- HELP TAB -->
+      <div id="adminTabHelp" class="modal-body" style="display:none;padding:1rem;max-height:60vh;overflow-y:auto;font-size:13px;line-height:1.7;color:var(--text-muted)">
 
-<!-- Admin trigger: triple-tap footer -->
+        <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:1rem">📖 Мануал адміністратора</div>
+
+        <!-- КЛІЄНТИ -->
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">👥 Вкладка "Клієнти"</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:4px">
+            <li>Список всіх зареєстрованих користувачів за номером телефону</li>
+            <li><b style="color:var(--text)">+ Зарахувати</b> — вручну поповнити баланс клієнта після отримання оплати</li>
+            <li><b style="color:var(--text)">🔒 Заблокувати</b> — заблокований клієнт не може подавати оголошення</li>
+            <li><b style="color:var(--text)">🔓 Розблокувати</b> — зняти блокування</li>
+          </ul>
+        </div>
+
+        <!-- ОПЛАТА -->
+        <div style="background:#EAF4EE;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:#0F6E56;margin-bottom:6px">💳 Як приймати оплату та зараховувати баланс</div>
+          <ol style="padding-left:1.1rem;display:flex;flex-direction:column;gap:5px;color:#0F6E56">
+            <li>Клієнт натискає <b>"Поповнити"</b> → обирає суму → натискає <b>"Поповнити"</b></li>
+            <li>На вашу пошту <b>ckbbuild@gmail.com</b> приходить лист з іменем, телефоном і сумою</li>
+            <li>Ви відправляєте клієнту <b>IBAN рахунок</b> в SMS або Viber на його номер</li>
+            <li>Клієнт оплачує за IBAN</li>
+            <li>Ви заходите в адмінку → <b>Заявки поповнення</b> → знаходите заявку клієнта → натискаєте <b>"Зарахувати"</b></li>
+            <li>Баланс клієнта автоматично збільшується, він може публікувати оголошення</li>
+          </ol>
+          <div style="margin-top:8px;font-size:11px;color:#3B6D11;padding:6px 10px;background:rgba(46,110,71,0.1);border-radius:6px">
+            ⚠️ Не зараховуйте баланс поки не отримали реальну оплату на рахунок!
+          </div>
+        </div>
+
+        <!-- ЗАЯВКИ -->
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">📋 Вкладка "Заявки"</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:4px">
+            <li>Всі запити на поповнення рахунку від клієнтів</li>
+            <li>Показує: ім'я, телефон, сума, дата</li>
+            <li>Статус <b style="color:var(--text)">очікує</b> — оплата ще не підтверджена</li>
+            <li>Натисніть <b style="color:var(--text)">"Зарахувати"</b> після отримання оплати — статус зміниться на ✓ Зараховано</li>
+          </ul>
+        </div>
+
+        <!-- ОГОЛОШЕННЯ -->
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">📢 Вкладка "Оголошення"</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:4px">
+            <li>Список всіх активних оголошень на сайті</li>
+            <li>Кнопка <b style="color:var(--red)">Видалити</b> — видаляє оголошення що порушує правила</li>
+            <li>Оголошення автоматично стають неактивними через 28 днів</li>
+            <li>Повністю видаляються через 56 днів (28 активне + 28 неактивне)</li>
+          </ul>
+        </div>
+
+        <!-- ЦІНИ -->
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">💰 Вкладка "Ціни"</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:4px">
+            <li><b style="color:var(--text)">Публікація шини/диска</b> — скільки списується при подачі оголошення</li>
+            <li><b style="color:var(--text)">Продовження шини/диска</b> — вартість продовження після 28 днів</li>
+            <li><b style="color:var(--text)">СТО перше слово</b> — ціна за перше ключове слово послуги</li>
+            <li><b style="color:var(--text)">СТО кожне наступне</b> — +30 грн за кожне додаткове слово</li>
+            <li><b style="color:var(--text)">СТО продовження</b> — 60 грн/місяць за всі оголошення СТО</li>
+            <li><b style="color:var(--text)">Карта</b> — додаткова опція для СТО +25 грн</li>
+            <li>Після зміни натисніть <b style="color:var(--text)">"Зберегти ціни"</b> — діє одразу</li>
+          </ul>
+        </div>
+
+        <!-- БАНЕР -->
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">🖼 Вкладка "Банер"</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:4px">
+            <li>Керує pop-up банером що з'являється відвідувачам</li>
+            <li><b style="color:var(--text)">Вмикач</b> — увімкнути або вимкнути показ банера</li>
+            <li><b style="color:var(--text)">Картинка</b> — завантажте фото для банера з телефону</li>
+            <li><b style="color:var(--text)">URL</b> — посилання куди перейде клієнт при кліку. Якщо порожнє — відкриє форму оголошення</li>
+            <li><b style="color:var(--text)">Інтервал</b> — як часто показувати (5 хвилин рекомендовано)</li>
+            <li><b style="color:var(--text)">👁 Прев'ю</b> — подивитись як виглядає до збереження</li>
+            <li>Банер зберігається в Firebase — показується всім відвідувачам одразу</li>
+          </ul>
+        </div>
+
+        <!-- ВХІД В АДМІНКУ -->
+        <div style="background:var(--amber-bg);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--amber);margin-bottom:6px">🔐 Вхід в адмінку</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:4px;color:var(--amber)">
+            <li>Кнопка <b>"Адмін"</b> в нижньому правому куті футера</li>
+            <li>Пароль змінюється в коді файлу index.html (рядок з <b>ADMIN_PASS</b>)</li>
+            <li>Нікому не давайте пароль від адмінки!</li>
+          </ul>
+        </div>
+
+        <div style="font-size:11px;color:var(--text-hint);text-align:center;padding-top:8px">
+          shina.live · Адмін-панель v1.0 · 2026
+        </div>
+      </div>
 <script>
 const ADMIN_PASS = 'admin123456';
 let adminLoggedIn = false;
@@ -2557,7 +2649,7 @@ function checkAdminPass(){
 }
 
 function switchAdminTab(tab){
-  ['users','topup','ads','prices','banner'].forEach(t=>{
+  ['users','topup','ads','prices','banner','help'].forEach(t=>{
     const tabEl = document.getElementById('adminTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(tabEl) tabEl.style.display = t===tab?'block':'none';
     const btn = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)+'Btn');
