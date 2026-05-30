@@ -1327,6 +1327,7 @@ async function loadListings(){
     DB=[];
     filterCards();
   }
+  return true;
 }
 
 function filterCards(){
@@ -1891,7 +1892,75 @@ function removePhoto(i){
   renderPhotoGrid();
 }
 
-loadListings();
+// ═══ ЗБЕРЕЖЕННЯ СТАНУ ═══
+function saveState(){
+  try{
+    localStorage.setItem('sh_filters', JSON.stringify(filters));
+    localStorage.setItem('sh_search', document.getElementById('searchInput').value||'');
+    localStorage.setItem('sh_sort', document.getElementById('sortSel').value||'newest');
+    localStorage.setItem('sh_wFilter', document.getElementById('wFilter').value||'');
+    localStorage.setItem('sh_rFilter', document.getElementById('rFilter').value||'');
+    localStorage.setItem('sh_cFilter', document.getElementById('cFilter').value||'');
+    localStorage.setItem('sh_scroll', window.scrollY||0);
+  }catch(e){}
+}
+
+function restoreState(){
+  try{
+    const f = localStorage.getItem('sh_filters');
+    if(f) filters = {...filters, ...JSON.parse(f)};
+
+    const search = localStorage.getItem('sh_search');
+    if(search) document.getElementById('searchInput').value = search;
+
+    const sort = localStorage.getItem('sh_sort');
+    if(sort) document.getElementById('sortSel').value = sort;
+
+    const w = localStorage.getItem('sh_wFilter');
+    if(w) document.getElementById('wFilter').value = w;
+
+    const r = localStorage.getItem('sh_rFilter');
+    if(r) document.getElementById('rFilter').value = r;
+
+    const c = localStorage.getItem('sh_cFilter');
+    if(c) document.getElementById('cFilter').value = c;
+
+    // Відновити чіпи категорій
+    document.querySelectorAll('.chip[data-f]').forEach(b=>{
+      b.classList.toggle('on', b.dataset.v === filters[b.dataset.f]);
+    });
+
+    // Відновити кнопки категорії в хіро
+    const cat = filters.cat||'all';
+    ['catTireBtn','catRimBtn','catSvcBtn'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      const c2 = id==='catTireBtn'?'tire':id==='catRimBtn'?'rim':'service';
+      el.className = 'btn '+(cat===c2?'btn-white':'btn-ghost');
+      el.style.borderColor = cat===c2?'':'rgba(245,243,238,0.25)';
+    });
+  }catch(e){}
+}
+
+function restoreScroll(){
+  try{
+    const y = parseInt(localStorage.getItem('sh_scroll')||'0');
+    if(y>0) setTimeout(()=>window.scrollTo(0,y), 300);
+  }catch(e){}
+}
+
+// Зберігаємо стан при будь-якій зміні фільтрів
+const _origFilterCards = filterCards;
+window.filterCards = function(){
+  _origFilterCards();
+  saveState();
+};
+
+// Зберігаємо позицію прокрутки
+window.addEventListener('scroll', ()=>{ try{localStorage.setItem('sh_scroll',window.scrollY);}catch(e){} }, {passive:true});
+
+restoreState();
+loadListings().then(()=>restoreScroll());
 updateHeaderAuth();
 
 document.querySelectorAll('.overlay').forEach(el=>{
