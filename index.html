@@ -6,6 +6,22 @@
 <title>ШиноМаркет — купівля та продаж шин</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Миттєве відновлення стану ДО завантаження Firebase -->
+<script>
+(function(){
+  try{
+    // Відновлюємо фільтри одразу щоб не було мигання
+    var f = localStorage.getItem('sh_filters');
+    if(f) window._savedFilters = JSON.parse(f);
+    window._savedSearch = localStorage.getItem('sh_search')||'';
+    window._savedSort = localStorage.getItem('sh_sort')||'newest';
+    window._savedScroll = parseInt(localStorage.getItem('sh_scroll')||'0');
+    window._savedW = localStorage.getItem('sh_wFilter')||'';
+    window._savedR = localStorage.getItem('sh_rFilter')||'';
+    window._savedC = localStorage.getItem('sh_cFilter')||'';
+  }catch(e){}
+})();
+</script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
@@ -2090,56 +2106,66 @@ document.addEventListener('click', function(e){
 function saveState(){
   try{
     localStorage.setItem('sh_filters', JSON.stringify(filters));
-    localStorage.setItem('sh_search', document.getElementById('searchInput').value||'');
-    localStorage.setItem('sh_sort', document.getElementById('sortSel').value||'newest');
-    localStorage.setItem('sh_wFilter', document.getElementById('wFilter').value||'');
-    localStorage.setItem('sh_rFilter', document.getElementById('rFilter').value||'');
-    localStorage.setItem('sh_cFilter', document.getElementById('cFilter').value||'');
-    localStorage.setItem('sh_scroll', window.scrollY||0);
+    const si = document.getElementById('searchInput');
+    localStorage.setItem('sh_search', si?si.value:'');
+    const ss = document.getElementById('sortSel');
+    localStorage.setItem('sh_sort', ss?ss.value:'newest');
+    const wf = document.getElementById('wFilter');
+    localStorage.setItem('sh_wFilter', wf?wf.value:'');
+    const rf = document.getElementById('rFilter');
+    localStorage.setItem('sh_rFilter', rf?rf.value:'');
+    const cf = document.getElementById('cFilter');
+    localStorage.setItem('sh_cFilter', cf?cf.value:'');
   }catch(e){}
 }
 
 function restoreState(){
   try{
-    const f = localStorage.getItem('sh_filters');
-    if(f) filters = {...filters, ...JSON.parse(f)};
+    // Використовуємо значення завантажені до Firebase
+    const savedF = window._savedFilters || {};
+    filters = {...filters, ...savedF};
 
-    const search = localStorage.getItem('sh_search');
-    if(search) document.getElementById('searchInput').value = search;
+    const si = document.getElementById('searchInput');
+    if(si && window._savedSearch) si.value = window._savedSearch;
 
-    const sort = localStorage.getItem('sh_sort');
-    if(sort) document.getElementById('sortSel').value = sort;
+    const ss = document.getElementById('sortSel');
+    if(ss && window._savedSort) ss.value = window._savedSort;
 
-    const w = localStorage.getItem('sh_wFilter');
-    if(w) document.getElementById('wFilter').value = w;
+    const wf = document.getElementById('wFilter');
+    if(wf && window._savedW) wf.value = window._savedW;
 
-    const r = localStorage.getItem('sh_rFilter');
-    if(r) document.getElementById('rFilter').value = r;
+    const rf = document.getElementById('rFilter');
+    if(rf && window._savedR) rf.value = window._savedR;
 
-    const c = localStorage.getItem('sh_cFilter');
-    if(c) document.getElementById('cFilter').value = c;
+    const cf = document.getElementById('cFilter');
+    if(cf && window._savedC) cf.value = window._savedC;
 
-    // Відновити чіпи категорій
+    // Відновити чіпи
     document.querySelectorAll('.chip[data-f]').forEach(b=>{
       b.classList.toggle('on', b.dataset.v === filters[b.dataset.f]);
     });
 
-    // Відновити кнопки категорії в хіро
+    // Відновити кнопки категорії
     const cat = filters.cat||'all';
-    ['catTireBtn','catRimBtn','catSvcBtn'].forEach(id=>{
+    const catMap = {catTireBtn:'tire', catRimBtn:'rim', catSvcBtn:'service'};
+    Object.entries(catMap).forEach(([id,val])=>{
       const el = document.getElementById(id);
       if(!el) return;
-      const c2 = id==='catTireBtn'?'tire':id==='catRimBtn'?'rim':'service';
-      el.className = 'btn '+(cat===c2?'btn-white':'btn-ghost');
-      el.style.borderColor = cat===c2?'':'rgba(245,243,238,0.25)';
+      el.className = 'btn '+(cat===val?'btn-white':'btn-ghost');
+      el.style.borderColor = cat===val?'':'rgba(245,243,238,0.25)';
     });
   }catch(e){}
 }
 
 function restoreScroll(){
   try{
-    const y = parseInt(localStorage.getItem('sh_scroll')||'0');
-    if(y>0) setTimeout(()=>window.scrollTo(0,y), 300);
+    const y = window._savedScroll||0;
+    if(y > 50){
+      // Миттєво без анімації
+      window.scrollTo({top:y, behavior:'instant'});
+      // Повторно через 600мс після рендеру карток
+      setTimeout(()=>window.scrollTo({top:y, behavior:'instant'}), 600);
+    }
   }catch(e){}
 }
 
@@ -2151,10 +2177,15 @@ window.filterCards = function(){
 };
 
 // Зберігаємо позицію прокрутки
-window.addEventListener('scroll', ()=>{ try{localStorage.setItem('sh_scroll',window.scrollY);}catch(e){} }, {passive:true});
+window.addEventListener('scroll', ()=>{
+  try{ localStorage.setItem('sh_scroll', Math.round(window.scrollY)); }catch(e){}
+}, {passive:true});
 
+// Ініціалізація
 restoreState();
-loadListings().then(()=>restoreScroll());
+loadListings().then(()=>{
+  restoreScroll();
+});
 updateHeaderAuth();
 
 document.querySelectorAll('.overlay').forEach(el=>{
