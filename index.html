@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ШиноМаркет — купівля та продаж шин</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;700&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrtZhY-HP9HPoTZupa5VqkxW6I7_0W9Rg",
+    authDomain: "shina-zvyagel.firebaseapp.com",
+    projectId: "shina-zvyagel",
+    storageBucket: "shina-zvyagel.firebasestorage.app",
+    messagingSenderId: "295644049393",
+    appId: "1:295644049393:web:d16468f32bbe95ec809e50"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const auth = firebase.auth();
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F3EE;
+    --bg-card: #FFFFFF;
+    --bg-alt: #EDEAE3;
+    --text: #1A1917;
+    --text-muted: #7A7770;
+    --text-hint: #B0ADA5;
+    --border: rgba(26,25,23,0.1);
+    --border-mid: rgba(26,25,23,0.18);
+    --accent: #1A1917;
+    --accent-text: #F5F3EE;
+    --green: #2E6E47;
+    --green-bg: #EAF4EE;
+    --red: #A3301D;
+    --red-bg: #FAECE8;
+    --amber: #8A5C0A;
+    --amber-bg: #FDF3E0;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.04);
+  }
+
+  body {
+    font-family: 'Manrope', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 0 1.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--accent-text);
+    text-decoration: none;
+  }
+  .logo svg { opacity: 0.9; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid transparent;
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn-ghost {
+    border-color: rgba(245,243,238,0.25);
+    color: var(--accent-text);
+    background: transparent;
+  }
+  .btn-ghost:hover { background: rgba(245,243,238,0.12); }
+  .btn-white {
+    background: var(--accent-text);
+    color: var(--accent);
+    border-color: var(--accent-text);
+  }
+  .btn-white:hover { background: #E8E5DF; }
+  .btn-dark {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+  }
+  .btn-dark:hover { background: #333; }
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border-color: var(--border-mid);
+  }
+  .btn-outline:hover { background: var(--bg-alt); }
+  .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ─── HERO / SEARCH ─── */
+  .hero {
+    background: var(--accent);
+    padding: 2rem 1.5rem 1.5rem;
+    border-bottom: none;
+  }
+  .hero-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    color: rgba(245,243,238,0.5);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .search-wrap {
+    display: flex;
+    gap: 8px;
+    max-width: 680px;
+  }
+  .search-wrap input {
+    flex: 1;
+    padding: 11px 16px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid rgba(245,243,238,0.15);
+    background: rgba(245,243,238,0.08);
+    color: var(--accent-text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-wrap input::placeholder { color: rgba(245,243,238,0.35); }
+  .search-wrap input:focus { border-color: rgba(245,243,238,0.5); }
+
+  /* ─── STATS BAR ─── */
+  .stats-bar {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow-x: auto;
+  }
+  .stats-bar span { white-space: nowrap; }
+  .stats-bar b { color: var(--text); font-weight: 600; }
+
+  /* ─── LAYOUT ─── */
+  .layout {
+    display: flex;
+    min-height: calc(100vh - 60px - 42px - 60px);
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 236px;
+    flex-shrink: 0;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    padding: 1.25rem 1rem;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+  .filter-group { margin-bottom: 1.5rem; }
+  .filter-group-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-hint);
+    margin-bottom: 8px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    padding: 5px 11px;
+    border-radius: 20px;
+    border: 1px solid var(--border-mid);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Manrope', sans-serif;
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .chip:hover { border-color: var(--text); color: var(--text); }
+  .chip.on { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .fsel {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    outline: none;
+    cursor: pointer;
+  }
+  .fsel:focus { border-color: var(--accent); }
+  .divider { height: 1px; background: var(--border); margin: 0 0 1.25rem; }
+
+  /* ─── MAIN ─── */
+  .main { flex: 1; padding: 1.25rem; min-width: 0; }
+  .main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 8px;
+  }
+  .result-count { font-size: 13px; color: var(--text-muted); }
+  .result-count b { color: var(--text); }
+  .sort-sel {
+    padding: 7px 12px;
+    border: 1px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ─── CARDS ─── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+    gap: 10px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--border-mid);
+  }
+  .card-thumb {
+    height: 130px;
+    background: var(--bg-alt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-thumb svg { opacity: 0.18; width: 72px; height: 72px; }
+  .badges { position: absolute; top: 8px; left: 8px; display: flex; gap: 4px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 20px;
+    line-height: 1.4;
+    letter-spacing: 0.02em;
+  }
+  .badge-new { background: var(--green-bg); color: var(--green); }
+  .badge-used { background: var(--bg-alt); color: var(--text-muted); }
+  .badge-buy { background: var(--amber-bg); color: var(--amber); }
+  .badge-hot { background: var(--red-bg); color: var(--red); }
+  .fav-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.85);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    backdrop-filter: blur(4px);
+  }
+  .fav-btn:hover { background: white; transform: scale(1.1); }
+  .fav-btn svg { width: 15px; height: 15px; }
+  .fav-btn.active svg { fill: #E24B4A; stroke: #E24B4A; }
+  .card-body { padding: 11px 13px 12px; }
+  .card-name {
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .card-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 9px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .card-sub svg { width: 11px; height: 11px; flex-shrink: 0; }
+  .card-price { font-size: 17px; font-weight: 700; font-family: 'Unbounded', sans-serif; letter-spacing: -0.03em; }
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 7px;
+    padding-top: 7px;
+    border-top: 1px solid var(--border);
+  }
+  .card-city { font-size: 11px; color: var(--text-hint); display: flex; align-items: center; gap: 3px; }
+  .card-city svg { width: 10px; height: 10px; }
+  .card-qty { font-size: 11px; color: var(--text-hint); }
+
+  /* ─── EMPTY ─── */
+  .empty {
+    grid-column: 1/-1;
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--text-muted);
+  }
+  .empty svg { width: 56px; height: 56px; opacity: 0.15; margin: 0 auto 1rem; display: block; }
+  .empty p { font-size: 15px; font-weight: 500; margin-bottom: 4px; color: var(--text); }
+  .empty span { font-size: 13px; }
+
+  /* ─── MODAL BACKDROP ─── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,9,8,0.55);
+    z-index: 200;
+    backdrop-filter: blur(2px);
+  }
+  .overlay.open { display: block; }
+  .modal {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--bg-card);
+    border-radius: var(--radius) var(--radius) 0 0;
+    width: 100%;
+    max-height: 94vh;
+    overflow-y: auto;
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.22s ease;
+    z-index: 201;
+  }
+  .modal-sm {
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @media (min-width: 680px) {
+    .overlay { display: none; align-items: center; justify-content: center; padding: 1.5rem; }
+    .overlay.open { display: flex; }
+    .modal {
+      position: static;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-sm { max-width: 400px; }
+  }
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg-card);
+  }
+  .modal-head h2 { font-size: 16px; font-weight: 700; }
+  .close-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-alt);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .close-btn:hover { background: var(--border-mid); color: var(--text); }
+  .close-btn svg { width: 14px; height: 14px; }
+  .modal-body { padding: 1.25rem; }
+  .modal-foot {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-card);
+  }
+
+  /* ─── FORM ELEMENTS ─── */
+  .fg { margin-bottom: 1rem; }
+  .fg:last-child { margin-bottom: 0; }
+  label.fl {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .finput {
+    width: 100%;
+    padding: 9px 13px;
+    border: 1.5px solid var(--border-mid);
+    border-radius: var(--radius-sm);
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .finput:focus { border-color: var(--accent); background: var(--bg-card); }
+  .finput::placeholder { color: var(--text-hint); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .toggle-row { display: flex; gap: 6px; }
+
+  /* ─── DETAIL MODAL STATS ─── */
+  .detail-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+  .ds-item {
+    background: var(--bg);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+  }
+  .ds-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-hint); margin-bottom: 3px; }
+  .ds-val { font-size: 14px; font-weight: 600; }
+  .detail-price { font-family: 'Unbounded', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
+  .detail-city { font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; display: flex; align-items: center; gap: 4px; }
+  .detail-city svg { width: 13px; height: 13px; }
+  .detail-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--bg);
+    padding: 10px 13px;
+    border-radius: var(--radius-sm);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  .phone-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--green-bg);
+    color: var(--green);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+    font-family: 'Manrope', sans-serif;
+    transition: background 0.15s;
+  }
+  .phone-btn:hover { background: #d4eedd; }
+  .phone-btn svg { width: 18px; height: 18px; }
+
+  /* ─── TOAST ─── */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 11px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    max-width: 280px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    background: var(--accent);
+    color: rgba(245,243,238,0.45);
+    padding: 1rem 1.5rem;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  footer a { color: rgba(245,243,238,0.45); text-decoration: none; }
+  footer a:hover { color: rgba(245,243,238,0.8); }
+
+  @media (max-width: 640px) {
+    .sidebar { display: none; }
+    .hero { padding: 1.25rem 1rem; }
+    .main { padding: 1rem; }
+    header { padding: 0 1rem; }
+    .stats-bar { padding: 0.6rem 1rem; }
+    .grid { grid-template-columns: 1fr 1fr; }
+    .btn-ghost { display: none; }
+    footer { flex-direction: column; gap: 4px; text-align: center; }
+  }
+  @media (max-width: 360px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .photo-thumb {
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+    border: 1px solid var(--border);
+  }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-del {
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(10,9,8,0.65);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(2px);
+    transition: background 0.15s;
+  }
+  .photo-del:hover { background: rgba(163,48,29,0.85); }
+  .photo-del svg { width: 10px; height: 10px; stroke: white; }
+  .photo-main-badge {
+    position: absolute;
+    bottom: 3px; left: 3px;
+    font-size: 9px; font-weight: 700;
+    background: var(--accent); color: var(--accent-text);
+    padding: 2px 5px; border-radius: 3px;
+    letter-spacing: 0.04em;
+  }
+</style>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a href="#" class="logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+      <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+      <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+    </svg>
+    ШиноМаркет · Шини та Диски
+  </a>
+  <div style="display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;border:1px solid rgba(245,243,238,0.2);font-size:12px;font-weight:600;color:rgba(245,243,238,0.85)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    Звягель
+  </div>
+  <div class="header-right">
+    <button class="btn btn-ghost" onclick="openModal('loginModal')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Увійти
+    </button>
+    <button class="btn btn-white" onclick="openModal('addModal')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Подати оголошення
+    </button>
+  </div>
+</header>
+
+<!-- HERO SEARCH -->
+<div class="hero">
+  <div class="hero-title">Ринок шин, дисків та авто-послуг · Звягель</div>
+  <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+    <button class="btn btn-white" id="catTireBtn" onclick="setCat('tire')" style="font-size:12px;padding:6px 14px">🔄 Шини</button>
+    <button class="btn btn-ghost" id="catRimBtn" onclick="setCat('rim')" style="font-size:12px;padding:6px 14px;border-color:rgba(245,243,238,0.25)">⭕ Диски</button>
+    <button class="btn btn-ghost" id="catSvcBtn" onclick="setCat('service')" style="font-size:12px;padding:6px 14px;border-color:rgba(245,243,238,0.25)">🔧 СТО / Послуги</button>
+  </div>
+  <div class="search-wrap">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(245,243,238,0.5)" stroke-width="2" style="flex-shrink:0;align-self:center"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
+    <input type="text" id="searchInput" placeholder="Пошук: шини, диски, шиномонтаж, СТО, розвал..." oninput="filterCards()">
+    <button class="btn btn-white" onclick="filterCards()">Знайти</button>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <span id="statTotal">Завантаження...</span>
+  <span>•</span>
+  <span><b id="statSell">—</b> продають</span>
+  <span>•</span>
+  <span><b id="statBuy">—</b> купують</span>
+  <span>•</span>
+  <span>Оновлено сьогодні</span>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="filter-group">
+      <div class="filter-group-title">Категорія</div>
+      <div class="chips">
+        <button class="chip on" data-f="cat" data-v="all" onclick="setChip('cat','all',this)">Всі</button>
+        <button class="chip" data-f="cat" data-v="tire" onclick="setChip('cat','tire',this)">🔄 Шини</button>
+        <button class="chip" data-f="cat" data-v="rim" onclick="setChip('cat','rim',this)">⭕ Диски</button>
+        <button class="chip" data-f="cat" data-v="service" onclick="setChip('cat','service',this)">🔧 Послуги</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="filter-group">
+      <div class="filter-group-title">Оголошення</div>
+      <div class="chips">
+        <button class="chip on" data-f="type" data-v="all" onclick="setChip('type','all',this)">Всі</button>
+        <button class="chip" data-f="type" data-v="sell" onclick="setChip('type','sell',this)">Продаю</button>
+        <button class="chip" data-f="type" data-v="buy" onclick="setChip('type','buy',this)">Купую</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="filter-group">
+      <div class="filter-group-title">Сезон</div>
+      <div class="chips">
+        <button class="chip on" data-f="season" data-v="all" onclick="setChip('season','all',this)">Всі</button>
+        <button class="chip" data-f="season" data-v="summer" onclick="setChip('season','summer',this)">☀ Літо</button>
+        <button class="chip" data-f="season" data-v="winter" onclick="setChip('season','winter',this)">❄ Зима</button>
+        <button class="chip" data-f="season" data-v="allseason" onclick="setChip('season','allseason',this)">☁ Всесезон</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="filter-group">
+      <div class="filter-group-title">Стан</div>
+      <div class="chips">
+        <button class="chip on" data-f="cond" data-v="all" onclick="setChip('cond','all',this)">Всі</button>
+        <button class="chip" data-f="cond" data-v="new" onclick="setChip('cond','new',this)">Нові</button>
+        <button class="chip" data-f="cond" data-v="used" onclick="setChip('cond','used',this)">Б/У</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="filter-group">
+      <div class="filter-group-title">Ширина (мм)</div>
+      <select class="fsel" id="wFilter" onchange="filterCards()">
+        <option value="">Будь-яка</option>
+        <option>155</option><option>165</option><option>175</option><option>185</option>
+        <option>195</option><option>205</option><option>215</option><option>225</option>
+        <option>235</option><option>245</option><option>255</option><option>265</option><option>275</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-group-title">Діаметр (R)</div>
+      <select class="fsel" id="rFilter" onchange="filterCards()">
+        <option value="">Будь-який</option>
+        <option>13</option><option>14</option><option>15</option><option>16</option>
+        <option>17</option><option>18</option><option>19</option><option>20</option><option>21</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-group-title">Місто</div>
+      <select class="fsel" id="cFilter" onchange="filterCards()">
+        <option value="">Всі міста</option>
+        <option>Звягель</option>
+      </select>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-outline" style="width:100%;justify-content:center;font-size:12px" onclick="resetFilters()">Скинути фільтри</button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-header">
+      <div class="result-count" id="resultCount">Завантаження...</div>
+      <select class="sort-sel" id="sortSel" onchange="renderCards()">
+        <option value="newest">Новіші спочатку</option>
+        <option value="price_asc">Ціна: від низької</option>
+        <option value="price_desc">Ціна: від високої</option>
+      </select>
+    </div>
+    <div class="grid" id="cardsGrid"></div>
+  </main>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <span>© 2026 ШиноМаркет — локальний майданчик</span>
+  <div style="display:flex;align-items:center;gap:1rem">
+    <span><a href="#" onclick="openModal('rulesModal');return false">Правила</a> · <a href="#" onclick="openModal('contactsModal');return false">Контакти</a> · <a href="#" onclick="openModal('advertModal');return false">Реклама</a></span>
+    <button onclick="openAdminPanel()" style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid rgba(245,243,238,0.2);background:rgba(245,243,238,0.08);color:rgba(245,243,238,0.6);font-size:11px;font-weight:600;cursor:pointer;font-family:'Manrope',sans-serif;transition:all 0.15s" onmouseover="this.style.background='rgba(245,243,238,0.15)';this.style.color='rgba(245,243,238,0.9)'" onmouseout="this.style.background='rgba(245,243,238,0.08)';this.style.color='rgba(245,243,238,0.6)'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Адмін
+    </button>
+  </div>
+</footer>
+
+<!-- ═══ ADD LISTING MODAL ═══ -->
+<div class="overlay" id="addModal" onclick="closeOverlay(event,'addModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>Нове оголошення</h2>
+      <button class="close-btn" onclick="closeModal('addModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <label class="fl">Тип оголошення</label>
+        <div class="toggle-row">
+          <button class="chip on" id="aTypeSell" onclick="setAdType('sell')">Продаю</button>
+          <button class="chip" id="aTypeBuy" onclick="setAdType('buy')">Купую</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Категорія</label>
+        <div class="toggle-row">
+          <button class="chip on" id="aCatTire" onclick="setAdCat('tire')">🔄 Шини</button>
+          <button class="chip" id="aCatRim" onclick="setAdCat('rim')">⭕ Диски</button>
+          <button class="chip" id="aCatSvc" onclick="setAdCat('service')">🔧 СТО</button>
+        </div>
+      </div>
+      <div class="fg" id="brandWrap">
+        <label class="fl" id="brandLabel">Марка шини</label>
+        <select class="finput" id="aBrand">
+          <option value="">— Оберіть марку —</option>
+          <optgroup label="Преміум">
+            <option>Michelin</option>
+            <option>Bridgestone</option>
+            <option>Continental</option>
+            <option>Pirelli</option>
+            <option>Goodyear</option>
+            <option>Dunlop</option>
+          </optgroup>
+          <optgroup label="Середній клас">
+            <option>Nokian</option>
+            <option>Hankook</option>
+            <option>Yokohama</option>
+            <option>Toyo</option>
+            <option>Falken</option>
+            <option>Kumho</option>
+            <option>Nexen</option>
+            <option>Cooper</option>
+            <option>BFGoodrich</option>
+            <option>Uniroyal</option>
+            <option>Firestone</option>
+            <option>Kleber</option>
+          </optgroup>
+          <optgroup label="Бюджет">
+            <option>Barum</option>
+            <option>Sava</option>
+            <option>Matador</option>
+            <option>Debica</option>
+            <option>Tigar</option>
+            <option>Riken</option>
+            <option>Kormoran</option>
+            <option>Rosava</option>
+            <option>Белшина</option>
+            <option>Kama</option>
+            <option>Viatti</option>
+            <option>Amtel</option>
+          </optgroup>
+          <optgroup label="Азійські">
+            <option>Giti</option>
+            <option>Triangle</option>
+            <option>Sailun</option>
+            <option>Hifly</option>
+            <option>Nankang</option>
+            <option>Maxxis</option>
+            <option>Comforser</option>
+            <option>Doublestar</option>
+            <option>Landsail</option>
+            <option>Centara</option>
+          </optgroup>
+          <option value="Інша марка">Інша марка...</option>
+        </select>
+      </div>
+      <div class="fg" id="brandCustomWrap" style="display:none">
+        <label class="fl">Вкажіть марку та модель</label>
+        <input class="finput" id="aBrandCustom" placeholder="Напр. Achilles 122 або Tourador X Wonder">
+      </div>
+      </div><!-- /brandWrap -->
+
+      <!-- ─── RIM FIELDS (диски) ─── -->
+      <div id="rimFields" style="display:none">
+        <div class="fg">
+          <label class="fl">Марка дисків</label>
+          <select class="finput" id="aRimBrand">
+            <option value="">— Оберіть марку —</option>
+            <optgroup label="Сталеві (штамповані)">
+              <option>КрКЗ</option><option>Asterro</option><option>Legeartis Steel</option><option>Інша сталева</option>
+            </optgroup>
+            <optgroup label="Литі — преміум">
+              <option>BBS</option><option>OZ Racing</option><option>Enkei</option><option>Rays/Volk</option>
+              <option>HRE</option><option>Forgeline</option><option>Rotiform</option>
+            </optgroup>
+            <optgroup label="Литі — середній клас">
+              <option>Borbet</option><option>Anzio</option><option>Alutec</option><option>Autec</option>
+              <option>MAK</option><option>Momo</option><option>MSW</option><option>Sparco</option>
+              <option>AEZ</option><option>Dezent</option><option>Rial</option>
+            </optgroup>
+            <optgroup label="Литі — бюджет">
+              <option>Replica</option><option>iFree</option><option>Скад</option><option>КиК</option>
+              <option>Legeartis</option><option>Remain</option><option>Скад</option>
+              <option>Inforged</option><option>Carwel</option>
+            </optgroup>
+            <option value="Інша марка дисків">Інша марка...</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fl">Матеріал</label>
+          <div class="toggle-row">
+            <button class="chip on" id="rimMatSteel" onclick="setRimMat('steel')">Сталеві</button>
+            <button class="chip" id="rimMatAlloy" onclick="setRimMat('alloy')">Литі</button>
+            <button class="chip" id="rimMatForged" onclick="setRimMat('forged')">Ковані</button>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Діаметр та кількість болтів</label>
+          <div class="row2">
+            <select class="finput" id="aRimDia">
+              <option value="">— Діаметр —</option>
+              <option>R13</option><option>R14</option><option>R15</option><option>R16</option>
+              <option>R17</option><option>R18</option><option>R19</option><option>R20</option>
+              <option>R21</option><option>R22</option>
+            </select>
+            <select class="finput" id="aRimPCD">
+              <option value="">— PCD —</option>
+              <option>4×98</option><option>4×100</option><option>4×108</option><option>4×114.3</option>
+              <option>5×100</option><option>5×108</option><option>5×112</option><option>5×114.3</option>
+              <option>5×120</option><option>5×127</option><option>5×130</option><option>6×139.7</option>
+            </select>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Ширина (J)</label>
+          <select class="finput" id="aRimWidth">
+            <option value="">— Ширина —</option>
+            <option>5.5J</option><option>6J</option><option>6.5J</option><option>7J</option>
+            <option>7.5J</option><option>8J</option><option>8.5J</option><option>9J</option>
+            <option>9.5J</option><option>10J</option><option>10.5J</option><option>11J</option>
+          </select>
+        </div>
+      </div><!-- /rimFields -->
+
+      <!-- ─── SERVICE FIELDS (СТО/послуги) ─── -->
+      <div id="svcFields" style="display:none">
+        <div class="fg">
+          <label class="fl">Назва СТО / Майстерні</label>
+          <input class="finput" id="aSvcName" placeholder="Напр. Шиномонтаж Іваненко або СТО Автостар">
+        </div>
+        <div class="fg">
+          <label class="fl">Адреса</label>
+          <input class="finput" id="aSvcAddr" placeholder="Вул. Шевченка 12, Звягель">
+        </div>
+        <div class="fg">
+          <label class="fl">Ключові слова — види робіт</label>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;padding:8px 10px;background:var(--amber-bg);border-radius:var(--radius-sm);line-height:1.5;color:var(--amber)">
+            <b>Перше слово — 70 грн · кожне наступне — 30 грн · 28 днів</b><br>
+            Оберіть потрібні послуги — за ними вас знайдуть клієнти
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px" id="svcKeywordBtns"></div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">Обрано: <span id="svcSelectedCount" style="font-weight:700;color:var(--text)">0</span> · Вартість: <span id="svcPrice" style="font-weight:700;color:var(--text)">0 грн</span></div>
+        </div>
+        <div class="fg">
+          <label class="fl">Режим роботи</label>
+          <input class="finput" id="aSvcHours" placeholder="Пн-Пт 8:00–18:00, Сб 9:00–14:00">
+        </div>
+        <div class="fg">
+          <label class="fl">Опис послуг (необов'язково)</label>
+          <textarea class="finput" id="aSvcDesc" rows="2" placeholder="Досвід роботи, обладнання, особливості..." style="resize:vertical;line-height:1.5"></textarea>
+        </div>
+        <div class="fg">
+          <label class="fl">Фото (обов'язково, до 5 штук)</label>
+          <input type="file" id="aSvcPhotos" accept="image/*" multiple style="display:none" onchange="handleSvcPhotos(this)">
+          <div id="svcPhotoGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+            <button type="button" onclick="document.getElementById('aSvcPhotos').click()" style="aspect-ratio:1;border:2px dashed var(--red);border-radius:var(--radius-sm);background:var(--red-bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--red);font-size:10px;font-family:sans-serif;padding:4px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Обов'язково
+            </button>
+          </div>
+          <div style="font-size:11px;color:var(--red);margin-top:4px">* Фото СТО обов'язкове для публікації</div>
+        </div>
+      </div>
+
+      <!-- ─── TIRE FIELDS (шини) ─── -->
+      <div id="tireFields">
+      <div class="fg">
+        <label class="fl">Розмір та сезон</label>
+        <div class="row2">
+          <select class="finput" id="aSize">
+            <option value="">— Розмір —</option>
+            <optgroup label="R13">
+              <option>155/70 R13</option><option>165/70 R13</option><option>175/70 R13</option><option>185/70 R13</option>
+            </optgroup>
+            <optgroup label="R14">
+              <option>155/65 R14</option><option>165/65 R14</option><option>175/65 R14</option><option>185/65 R14</option>
+              <option>155/70 R14</option><option>165/70 R14</option><option>175/70 R14</option><option>185/70 R14</option>
+              <option>175/60 R14</option><option>185/60 R14</option><option>195/60 R14</option>
+            </optgroup>
+            <optgroup label="R15">
+              <option>175/65 R15</option><option>185/65 R15</option><option>195/65 R15</option><option>205/65 R15</option>
+              <option>175/70 R15</option><option>185/70 R15</option><option>195/70 R15</option>
+              <option>185/60 R15</option><option>195/60 R15</option><option>205/60 R15</option>
+              <option>195/55 R15</option><option>205/55 R15</option>
+              <option>185/75 R15</option><option>195/75 R15</option><option>205/75 R15</option>
+            </optgroup>
+            <optgroup label="R16">
+              <option>185/55 R16</option><option>195/55 R16</option><option>205/55 R16</option><option>215/55 R16</option><option>225/55 R16</option>
+              <option>185/60 R16</option><option>195/60 R16</option><option>205/60 R16</option><option>215/60 R16</option><option>225/60 R16</option>
+              <option>195/65 R16</option><option>205/65 R16</option><option>215/65 R16</option><option>225/65 R16</option>
+              <option>205/70 R16</option><option>215/70 R16</option><option>225/70 R16</option><option>235/70 R16</option>
+              <option>215/75 R16</option><option>225/75 R16</option><option>235/75 R16</option>
+            </optgroup>
+            <optgroup label="R17">
+              <option>195/45 R17</option><option>205/45 R17</option><option>215/45 R17</option><option>225/45 R17</option><option>235/45 R17</option>
+              <option>205/50 R17</option><option>215/50 R17</option><option>225/50 R17</option><option>235/50 R17</option>
+              <option>205/55 R17</option><option>215/55 R17</option><option>225/55 R17</option><option>235/55 R17</option>
+              <option>205/60 R17</option><option>215/60 R17</option><option>225/60 R17</option><option>235/60 R17</option>
+              <option>215/65 R17</option><option>225/65 R17</option><option>235/65 R17</option><option>245/65 R17</option>
+              <option>225/70 R17</option><option>235/70 R17</option><option>245/70 R17</option><option>265/70 R17</option>
+            </optgroup>
+            <optgroup label="R18">
+              <option>215/40 R18</option><option>225/40 R18</option><option>235/40 R18</option><option>245/40 R18</option>
+              <option>215/45 R18</option><option>225/45 R18</option><option>235/45 R18</option><option>245/45 R18</option>
+              <option>215/50 R18</option><option>225/50 R18</option><option>235/50 R18</option><option>245/50 R18</option>
+              <option>225/55 R18</option><option>235/55 R18</option><option>245/55 R18</option><option>255/55 R18</option>
+              <option>225/60 R18</option><option>235/60 R18</option><option>245/60 R18</option><option>255/60 R18</option>
+              <option>225/65 R18</option><option>235/65 R18</option><option>245/65 R18</option><option>265/65 R18</option>
+            </optgroup>
+            <optgroup label="R19">
+              <option>225/35 R19</option><option>235/35 R19</option><option>245/35 R19</option><option>255/35 R19</option>
+              <option>225/40 R19</option><option>235/40 R19</option><option>245/40 R19</option><option>255/40 R19</option>
+              <option>225/45 R19</option><option>235/45 R19</option><option>245/45 R19</option><option>255/45 R19</option>
+              <option>225/50 R19</option><option>235/50 R19</option><option>245/50 R19</option><option>255/50 R19</option>
+              <option>235/55 R19</option><option>245/55 R19</option><option>255/55 R19</option>
+            </optgroup>
+            <optgroup label="R20">
+              <option>225/35 R20</option><option>235/35 R20</option><option>245/35 R20</option><option>255/35 R20</option><option>265/35 R20</option>
+              <option>225/40 R20</option><option>235/40 R20</option><option>245/40 R20</option><option>255/40 R20</option>
+              <option>225/45 R20</option><option>235/45 R20</option><option>245/45 R20</option><option>255/45 R20</option>
+              <option>235/50 R20</option><option>245/50 R20</option><option>255/50 R20</option><option>265/50 R20</option>
+              <option>235/55 R20</option><option>245/55 R20</option><option>265/55 R20</option><option>275/55 R20</option>
+              <option>255/60 R20</option><option>265/60 R20</option><option>275/60 R20</option>
+            </optgroup>
+            <optgroup label="R21 / R22">
+              <option>245/35 R21</option><option>255/35 R21</option><option>265/35 R21</option>
+              <option>245/40 R21</option><option>255/40 R21</option><option>265/45 R21</option>
+              <option>275/45 R21</option><option>285/45 R21</option><option>295/40 R21</option>
+              <option>245/35 R22</option><option>255/35 R22</option><option>265/35 R22</option>
+              <option>265/40 R22</option><option>275/40 R22</option><option>285/40 R22</option>
+              <option>295/35 R22</option><option>305/40 R22</option>
+            </optgroup>
+            <option value="custom_size">Інший розмір...</option>
+          </select>
+          <select class="finput" id="aSeason">
+            <option value="summer">☀ Літні</option>
+            <option value="winter">❄ Зимові</option>
+            <option value="allseason">☁ Всесезонні</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg" id="sizeCustomWrap" style="display:none">
+        <label class="fl">Вкажіть розмір вручну</label>
+        <input class="finput" id="aSizeCustom" placeholder="Напр. 215/75 R17.5 або 31x10.5 R15">
+      </div>
+      </div><!-- /tireFields -->
+      <div id="nonSvcFields">
+      <div class="fg">
+        <label class="fl">Стан</label>
+        <div class="toggle-row">
+          <button class="chip on" id="aCondNew" onclick="setAdCond('new')">Нові</button>
+          <button class="chip" id="aCondUsed" onclick="setAdCond('used')">Б/У</button>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fg">
+          <label class="fl">Ціна (грн)</label>
+          <input class="finput" id="aPrice" type="number" placeholder="2 400" min="0">
+        </div>
+        <div class="fg">
+          <label class="fl">Кількість (шт)</label>
+          <input class="finput" id="aQty" type="number" placeholder="4" value="4" min="1">
+        </div>
+      </div>
+      </div><!-- /nonSvcFields -->
+      <div class="fg" id="tirePhotoWrap">
+        <label class="fl">Фото (до 5 штук)</label>
+        <input type="file" id="aPhotos" accept="image/*" multiple style="display:none" onchange="handlePhotos(this)">
+        <div id="photoGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+          <button type="button" id="photoAddBtn" onclick="document.getElementById('aPhotos').click()" style="aspect-ratio:1;border:1.5px dashed var(--border-mid);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--text-muted);font-size:11px;font-family:var(--font-sans,sans-serif);transition:all 0.15s;padding:4px" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--text)'" onmouseout="this.style.borderColor='var(--border-mid)';this.style.color='var(--text-muted)'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Фото
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-hint);margin-top:4px">Перше фото буде головним</div>
+      </div>
+      <div class="fg">
+        <label class="fl">Місто</label>
+        <div style="display:flex;align-items:center;gap:8px;padding:9px 13px;border:1.5px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="width:15px;height:15px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span style="font-size:13px;font-weight:600">Звягель</span>
+          <span style="font-size:11px;color:var(--text-hint);margin-left:auto">фіксовано</span>
+        </div>
+        <input type="hidden" id="aCity" value="Звягель">
+      </div>
+      <div class="fg">
+        <label class="fl">Опис (необов'язково)</label>
+        <textarea class="finput" id="aDesc" rows="2" placeholder="Залишок протектору, рік виробництва, інші деталі..." style="resize:vertical;line-height:1.5"></textarea>
+      </div>
+      <div class="fg">
+        <label class="fl">Контактний телефон</label>
+        <div id="phoneFromAccount" style="display:flex;align-items:center;gap:8px;padding:9px 13px;border:1.5px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--bg);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;flex-shrink:0;color:var(--text-muted)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.7 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.07 6.07l.95-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span id="phoneDisplay" style="font-size:13px;font-weight:600"></span>
+          <span style="font-size:11px;color:var(--text-hint);margin-left:auto">з акаунту</span>
+        </div>
+        <div id="phoneNotLogged" style="display:none;padding:9px 13px;background:var(--amber-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--amber);display:none;align-items:center;gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Увійдіть в акаунт, щоб ваш телефон підтягнувся автоматично
+        </div>
+        <input type="hidden" id="aPhone">
+      </div>
+
+      <!-- БАЛАНС / ПОПОВНЕННЯ -->
+      <div style="margin-top:0.5rem;padding:14px 16px;background:var(--bg);border-radius:var(--radius-sm);border:1.5px solid var(--border-mid)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:2px">Баланс рахунку</div>
+            <div style="font-size:20px;font-weight:700;font-family:'Unbounded',sans-serif;letter-spacing:-0.02em" id="balanceDisplay">0 грн</div>
+          </div>
+          <button onclick="openModal('topupModal')" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:13px;font-weight:600;cursor:pointer;font-family:'Manrope',sans-serif;transition:background 0.15s" onmouseover="this.style.background='#333'" onmouseout="this.style.background='var(--accent)'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Поповнити
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-hint);line-height:1.5">
+          Одне оголошення — <b style="color:var(--text-muted)">10 грн</b> · діє 30 днів
+        </div>
+      </div>
+    </div><!-- /modal-body -->
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('addModal')">Скасувати</button>
+      <button class="btn btn-dark" onclick="submitAd()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg>
+        Опублікувати · 10 грн
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOPUP MODAL ═══ -->
+<div class="overlay" id="topupModal" onclick="closeOverlay(event,'topupModal')">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>Поповнити рахунок</h2>
+      <button class="close-btn" onclick="closeModal('topupModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Поточний баланс -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:1.25rem">
+        <span style="font-size:13px;color:var(--text-muted)">Поточний баланс</span>
+        <span style="font-size:16px;font-weight:700;font-family:'Unbounded',sans-serif" id="topupBalance">0 грн</span>
+      </div>
+
+      <!-- Інфо про ціну -->
+      <div style="padding:12px 14px;background:var(--amber-bg);border-radius:var(--radius-sm);margin-bottom:1.25rem;font-size:13px;color:var(--amber);line-height:1.6">
+        <b>Ціна оголошення — 10 грн на 28 днів.</b><br>
+        Оберіть суму поповнення і натисніть кнопку <b>Поповнити</b> — на пошту адміністратора надійде заявка з вашим номером телефону та сумою. Адміністратор надішле рахунок (IBAN) в SMS або Viber.
+      </div>
+
+      <!-- Кнопки суми -->
+      <div class="fg">
+        <label class="fl">Оберіть суму</label>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px" id="topupQuick">
+          <button class="chip" onclick="setTopupAmt(50)" style="padding:12px;font-size:14px">50 грн<br><span style="font-size:10px;opacity:0.7">5 оголошень</span></button>
+          <button class="chip" onclick="setTopupAmt(100)" style="padding:12px;font-size:14px">100 грн<br><span style="font-size:10px;opacity:0.7">10 оголошень</span></button>
+          <button class="chip" onclick="setTopupAmt(200)" style="padding:12px;font-size:14px">200 грн<br><span style="font-size:10px;opacity:0.7">20 оголошень</span></button>
+          <button class="chip" onclick="setTopupAmt(500)" style="padding:12px;font-size:14px">500 грн<br><span style="font-size:10px;opacity:0.7">50 оголошень</span></button>
+        </div>
+      </div>
+
+      <!-- Обрана сума -->
+      <div id="topupSelected" style="display:none;margin-top:1rem;padding:12px 14px;border:1.5px solid var(--accent);border-radius:var(--radius-sm);display:none;align-items:center;justify-content:space-between">
+        <span style="font-size:13px;color:var(--text-muted)">Обрана сума:</span>
+        <span style="font-size:18px;font-weight:700;font-family:'Unbounded',sans-serif" id="topupSelectedAmt"></span>
+      </div>
+
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('topupModal')">Скасувати</button>
+      <button class="btn btn-dark" id="topupSendBtn" onclick="doTopup()" disabled style="opacity:0.4;cursor:not-allowed">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        Поповнити
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN MODAL ═══ -->
+<div class="overlay" id="loginModal" onclick="closeOverlay(event,'loginModal')">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2 id="loginTitle">Увійти</h2>
+      <button class="close-btn" onclick="closeModal('loginModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <!-- LOGIN TAB -->
+    <div id="tabLogin">
+      <div class="modal-body">
+        <div class="fg">
+          <label class="fl">Телефон</label>
+          <input class="finput" id="loginPhone" placeholder="+380 67 123 45 67">
+        </div>
+        <div class="fg">
+          <label class="fl">Пароль</label>
+          <input class="finput" id="loginPass" type="password" placeholder="••••••••">
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" onclick="switchAuthTab('reg')">Реєстрація</button>
+        <button class="btn btn-dark" onclick="doLogin()">Увійти</button>
+      </div>
+    </div>
+    <!-- REGISTER TAB -->
+    <div id="tabReg" style="display:none">
+      <div class="modal-body">
+        <div class="fg">
+          <label class="fl">Ваше ім'я</label>
+          <input class="finput" id="regName" placeholder="Іван">
+        </div>
+        <div class="fg">
+          <label class="fl">Телефон</label>
+          <input class="finput" id="regPhone" placeholder="+380 67 123 45 67">
+        </div>
+        <div class="fg">
+          <label class="fl">Пароль</label>
+          <input class="finput" id="regPass" type="password" placeholder="мін. 6 символів">
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" onclick="switchAuthTab('login')">Вже є акаунт</button>
+        <button class="btn btn-dark" onclick="doRegister()">Зареєструватись</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DETAIL MODAL ═══ -->
+<div class="overlay" id="detailModal" onclick="closeOverlay(event,'detailModal')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:440px">
+    <div class="modal-head">
+      <h2 id="detailTitle">Деталі оголошення</h2>
+      <button class="close-btn" onclick="closeModal('detailModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toastEl">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+const S={summer:'Літні',winter:'Зимові',allseason:'Всесезонні'};
+const SI={summer:'☀',winter:'❄',allseason:'☁'};
+
+let DB=[]; // буде завантажено з Firebase
+let nextId=Date.now();
+let filters={type:'all',season:'all',cond:'all',cat:'all'};
+let favs=new Set();
+let adType='sell',adCond='new',adCat='tire',rimMat='steel';
+let _filtered=null;
+let currentUser=null;
+
+// ═══ FIREBASE AUTH ═══
+auth.onAuthStateChanged(async fbUser=>{
+  if(fbUser){
+    const snap = await db.collection('users').doc(fbUser.uid).get();
+    if(snap.exists){
+      currentUser = {uid:fbUser.uid, ...snap.data()};
+    } else {
+      currentUser = {uid:fbUser.uid, name:fbUser.displayName||'Користувач', phone:'', balance:0};
+    }
+    updateHeaderAuth();
+    prepareAddModal();
+  } else {
+    currentUser=null;
+    updateHeaderAuth();
+  }
+});
+
+function updateHeaderAuth(){
+  const btn=document.querySelector('button[onclick*="loginModal"]');
+  if(!btn)return;
+  if(currentUser){
+    const bal=(currentUser.balance||0).toLocaleString('uk-UA');
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> ${currentUser.name} · ${bal} грн`;
+    btn.onclick=()=>{ if(confirm('Вийти з акаунту?')){auth.signOut();toast('Вийшли з акаунту');} };
+  } else {
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> Увійти`;
+    btn.onclick=()=>openModal('loginModal');
+  }
+}
+
+function switchAuthTab(tab){
+  document.getElementById('tabLogin').style.display=tab==='login'?'block':'none';
+  document.getElementById('tabReg').style.display=tab==='reg'?'block':'none';
+  document.getElementById('loginTitle').textContent=tab==='login'?'Увійти':'Реєстрація';
+}
+
+async function doLogin(){
+  const phone=document.getElementById('loginPhone').value.trim();
+  const pass=document.getElementById('loginPass').value;
+  if(!phone){toast('Введіть телефон');return;}
+  if(!pass){toast('Введіть пароль');return;}
+  // використовуємо телефон як email: phone@shina.zvyagel
+  const fakeEmail = phone.replace(/\D/g,'')+`@shina.zvyagel`;
+  try{
+    await auth.signInWithEmailAndPassword(fakeEmail, pass);
+    closeModal('loginModal');
+    toast('Ласкаво просимо!');
+  } catch(e){
+    toast('Невірний телефон або пароль');
+  }
+}
+
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
+  const phone=document.getElementById('regPhone').value.trim();
+  const pass=document.getElementById('regPass').value;
+  if(!name){toast('Введіть ім\'я');return;}
+  if(containsBadWords(name)){toast('⚠️ Ім\'я містить недопустимі слова');document.getElementById('regName').focus();return;}
+  if(!phone||phone.length<10){toast('Введіть правильний телефон');return;}
+  if(!pass||pass.length<6){toast('Пароль мінімум 6 символів');return;}
+  const fakeEmail = phone.replace(/\D/g,'')+`@shina.zvyagel`;
+  try{
+    const cred = await auth.createUserWithEmailAndPassword(fakeEmail, pass);
+    await db.collection('users').doc(cred.user.uid).set({name,phone,balance:0,blocked:false,createdAt:Date.now()});
+    closeModal('loginModal');
+    toast('Акаунт створено! Ласкаво просимо, '+name+'!');
+  } catch(e){
+    if(e.code==='auth/email-already-in-use') toast('Цей телефон вже зареєстровано');
+    else toast('Помилка реєстрації: '+e.message);
+  }
+}
+
+function prepareAddModal(){
+  const fromAcc=document.getElementById('phoneFromAccount');
+  const notLogged=document.getElementById('phoneNotLogged');
+  const phoneHidden=document.getElementById('aPhone');
+  if(currentUser){
+    fromAcc.style.display='flex';
+    notLogged.style.display='none';
+    document.getElementById('phoneDisplay').textContent=currentUser.phone;
+    phoneHidden.value=currentUser.phone;
+  } else {
+    fromAcc.style.display='none';
+    notLogged.style.display='flex';
+    phoneHidden.value='';
+  }
+  updateBalanceUI();
+}
+
+// ═══ ЗАВАНТАЖЕННЯ ОГОЛОШЕНЬ З FIREBASE ═══
+async function loadListings(){
+  document.getElementById('resultCount').innerHTML='Завантаження...';
+  try{
+    const snap = await db.collection('listings').orderBy('date','desc').limit(200).get();
+    DB = snap.docs.map(d=>({id:d.id,...d.data()}));
+    filterCards();
+  } catch(e){
+    console.error('Firestore error:',e);
+    DB=[];
+    filterCards();
+  }
+}
+
+function filterCards(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  const w=document.getElementById('wFilter').value;
+  const r=document.getElementById('rFilter').value;
+  const c=document.getElementById('cFilter').value;
+  _filtered=DB.filter(l=>{
+    if(filters.cat!=='all'&&l.cat!==filters.cat)return false;
+    if(filters.type!=='all'&&l.type!==filters.type)return false;
+    if(filters.season!=='all'&&l.season!==filters.season)return false;
+    if(filters.cond!=='all'&&l.cond!==filters.cond)return false;
+    if(q){const s=(l.brand+' '+(l.size||'')+' '+l.city+' '+(l.cat==='rim'?'диск':'шина')+' '+S[l.season||'summer']).toLowerCase();if(!s.includes(q))return false;}
+    if(w&&l.cat==='tire'&&!(l.size||'').startsWith(w))return false;
+    if(r&&!(l.size||'').includes('R'+r))return false;
+    if(c&&l.city!==c)return false;
+    return true;
+  });
+  renderCards();
+  updateStats();
+}
+
+function setCat(c){
+  filters.cat=c==='tire'?'tire':c==='rim'?'rim':c==='service'?'service':'all';
+  document.getElementById('catTireBtn').className='btn '+(c==='tire'?'btn-white':'btn-ghost');
+  document.getElementById('catRimBtn').className='btn '+(c==='rim'?'btn-white':'btn-ghost');
+  document.getElementById('catSvcBtn').className='btn '+(c==='service'?'btn-white':'btn-ghost');
+  ['catTireBtn','catRimBtn','catSvcBtn'].forEach(id=>{
+    document.getElementById(id).style.borderColor=document.getElementById(id).className.includes('btn-ghost')?'rgba(245,243,238,0.25)':'';
+  });
+  document.querySelectorAll('[data-f="cat"]').forEach(b=>b.classList.toggle('on',b.dataset.v===(c||'all')));
+  filterCards();
+}
+
+const SVC_KEYWORDS = [
+  'Шиномонтаж','Балансування','Розвал-сходження','Заміна масла','Діагностика',
+  'Кузовний ремонт','Покраска','Зварювання','Ходова частина','Гальмівна система',
+  'Двигун','КПП','Підвіска','Рульове управління','Електрика авто',
+  'Кондиціонер авто','Акумулятори','Заміна гальмівних колодок','Заміна фільтрів',
+  'Заміна ременя ГРМ','Антикорозійна обробка','Тонування','Полірування',
+  'Хімчистка салону','Детейлінг','Евакуатор','Автозапчастини','Нарізка різьби',
+  'Заміна скла','Ремонт фар','Карбон','Чіп-тюнінг','Промивка форсунок',
+];
+let svcSelectedKeywords = [];
+let svcPhotos = [];
+
+function initSvcKeywords(){
+  const wrap = document.getElementById('svcKeywordBtns');
+  if(!wrap) return;
+  wrap.innerHTML = SVC_KEYWORDS.map(kw=>`
+    <button type="button" class="chip" onclick="toggleSvcKeyword('${kw}',this)">${kw}</button>
+  `).join('');
+}
+
+function toggleSvcKeyword(kw, btn){
+  const idx = svcSelectedKeywords.indexOf(kw);
+  if(idx>-1){
+    svcSelectedKeywords.splice(idx,1);
+    btn.classList.remove('on');
+  } else {
+    svcSelectedKeywords.push(kw);
+    btn.classList.add('on');
+  }
+  const count = svcSelectedKeywords.length;
+  const price = count===0 ? 0 : 70 + (count-1)*30;
+  document.getElementById('svcSelectedCount').textContent = count;
+  document.getElementById('svcPrice').textContent = price+' грн';
+  // update publish button
+  const pubBtn = document.querySelector('[onclick="submitAdWithBlockCheck()"]');
+  if(pubBtn && adCat==='service') pubBtn.textContent = `✓ Опублікувати · ${price} грн`;
+}
+
+function handleSvcPhotos(input){
+  const files = Array.from(input.files);
+  const remaining = 5-svcPhotos.length;
+  files.slice(0,remaining).forEach(f=>{
+    const reader = new FileReader();
+    reader.onload = e => { svcPhotos.push(e.target.result); renderSvcPhotoGrid(); };
+    reader.readAsDataURL(f);
+  });
+  input.value='';
+}
+
+function renderSvcPhotoGrid(){
+  const grid = document.getElementById('svcPhotoGrid');
+  let html = svcPhotos.map((src,i)=>`
+    <div class="photo-thumb">
+      <img src="${src}" alt="фото ${i+1}">
+      ${i===0?'<span class="photo-main-badge">ГОЛОВНЕ</span>':''}
+      <button class="photo-del" onclick="removeSvcPhoto(${i})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+      </button>
+    </div>
+  `).join('');
+  if(svcPhotos.length<5){
+    html+=`<button type="button" onclick="document.getElementById('aSvcPhotos').click()" style="aspect-ratio:1;border:1.5px dashed var(--border-mid);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--text-muted);font-size:10px;font-family:sans-serif;padding:4px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Додати</button>`;
+  }
+  grid.innerHTML = html;
+}
+
+function removeSvcPhoto(i){ svcPhotos.splice(i,1); renderSvcPhotoGrid(); }
+
+function setAdCat(c){
+  adCat=c;
+  document.getElementById('aCatTire').classList.toggle('on',c==='tire');
+  document.getElementById('aCatRim').classList.toggle('on',c==='rim');
+  document.getElementById('aCatSvc').classList.toggle('on',c==='service');
+  document.getElementById('tireFields').style.display=c==='tire'?'block':'none';
+  document.getElementById('rimFields').style.display=c==='rim'?'block':'none';
+  document.getElementById('svcFields').style.display=c==='service'?'block':'none';
+  document.getElementById('brandWrap').style.display=c==='service'?'none':'block';
+  document.getElementById('brandCustomWrap').style.display='none';
+  document.getElementById('nonSvcFields').style.display=c==='service'?'none':'block';
+  document.getElementById('tirePhotoWrap').style.display=c==='service'?'none':'block';
+  // update publish button label
+  const pubBtn = document.querySelector('[onclick="submitAdWithBlockCheck()"]');
+  if(pubBtn){
+    if(c==='service'){
+      const p = svcSelectedKeywords.length===0?70:70+(svcSelectedKeywords.length-1)*30;
+      pubBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg> Опублікувати · ${p} грн`;
+    } else {
+      pubBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg> Опублікувати · 10 грн`;
+    }
+  }
+  if(c==='service') initSvcKeywords();
+}
+
+function setRimMat(m){
+  rimMat=m;
+  ['steel','alloy','forged'].forEach(x=>{
+    document.getElementById('rimMat'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('on',m===x);
+  });
+}
+
+function filterCards(){
+  const q=document.getElementById('searchInput').value.toLowerCase().trim();
+  const w=document.getElementById('wFilter').value;
+  const r=document.getElementById('rFilter').value;
+  const c=document.getElementById('cFilter').value;
+  _filtered=DB.filter(l=>{
+    if(filters.cat!=='all'&&l.cat!==filters.cat)return false;
+    if(filters.type!=='all'&&l.type!==filters.type)return false;
+    if(filters.season!=='all'&&l.season!==filters.season)return false;
+    if(filters.cond!=='all'&&l.cond!==filters.cond)return false;
+    if(q){const s=(l.brand+' '+l.size+' '+l.city+' '+(l.cat==='rim'?'диск':'шина')+' '+S[l.season||'summer']).toLowerCase();if(!s.includes(q))return false;}
+    if(w&&l.cat==='tire'&&!l.size.startsWith(w))return false;
+    if(r&&!(l.size||'').includes('R'+r))return false;
+    if(c&&l.city!==c)return false;
+    return true;
+  });
+  renderCards();
+  updateStats();
+}
+
+function renderCards(){
+  const sort=document.getElementById('sortSel').value;
+  const data=[...(_filtered||DB)];
+  if(sort==='price_asc')data.sort((a,b)=>a.price-b.price);
+  else if(sort==='price_desc')data.sort((a,b)=>b.price-a.price);
+  else data.sort((a,b)=>b.date-a.date);
+  document.getElementById('resultCount').innerHTML=`Знайдено: <b>${data.length}</b> оголошень`;
+  const g=document.getElementById('cardsGrid');
+  if(!data.length){
+    g.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg><p>Нічого не знайдено</p><span>Спробуйте змінити фільтри або пошуковий запит</span></div>`;
+    return;
+  }
+  g.innerHTML=data.map(l=>{
+    const isFav=favs.has(l.id);
+    const isRim=l.cat==='rim';
+    const isSvc=l.cat==='service';
+    const subLine=isSvc
+      ? `🔧 ${(l.keywords||[]).slice(0,2).join(' · ')}`
+      : isRim
+        ? `${l.size||''}${l.rimMat?` · ${l.rimMat==='steel'?'Сталеві':l.rimMat==='alloy'?'Литі':'Ковані'}`:''}`
+        : `${SI[l.season||'summer']} ${l.size} · ${S[l.season||'summer']}`;
+    const priceLabel = isSvc ? (l.size||'Звягель') : l.price.toLocaleString('uk-UA')+' грн';
+    return`<div class="card" onclick="openDetail(${l.id})">
+      <div class="card-thumb" style="${isSvc?'background:var(--bg-alt)':''}">
+        ${l.photos&&l.photos[0]
+          ? `<img src="${l.photos[0]}" alt="${l.brand}" style="width:100%;height:100%;object-fit:cover;display:block">`
+          : isSvc
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:0.18;width:64px;height:64px"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`
+            : isRim
+              ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:0.18;width:72px;height:72px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7.8" y2="7.8"/><line x1="16.2" y1="16.2" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7.8" y2="16.2"/><line x1="16.2" y1="7.8" x2="19.1" y2="4.9"/></svg>`
+              : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5.5"/><line x1="12" y1="18.5" x2="12" y2="22"/><line x1="2" y1="12" x2="5.5" y2="12"/><line x1="18.5" y1="12" x2="22" y2="12"/></svg>`
+        }
+        <div class="badges">
+          ${isSvc
+            ? '<span class="badge" style="background:#E1F5EE;color:#0F6E56;font-size:9px">СТО</span>'
+            : `<span class="badge ${l.cond==='new'?'badge-new':'badge-used'}">${l.cond==='new'?'НОВІ':'Б/У'}</span>`
+          }
+          ${l.type==='buy'?'<span class="badge badge-buy">КУПЛЮ</span>':''}
+          ${isRim?'<span class="badge" style="background:#E6F1FB;color:#185FA5">ДИСКИ</span>':''}
+        </div>
+        ${!isSvc?`<button class="fav-btn${isFav?' active':''}" aria-label="Обране" onclick="toggleFav(event,${l.id})"><svg viewBox="0 0 24 24" fill="none" stroke="#E24B4A" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>`:''}
+      </div>
+      <div class="card-body">
+        <div class="card-name">${l.brand}</div>
+        <div class="card-sub" style="font-size:10px">${subLine}</div>
+        ${isSvc
+          ? `<div style="font-size:12px;color:var(--text-muted)">${l.hours||'Години роботи не вказані'}</div>`
+          : `<div class="card-price">${priceLabel}</div>`
+        }
+        <div class="card-footer">
+          <span class="card-city"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.city}</span>
+          ${!isSvc?`<span class="card-qty">${l.qty} шт</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStats(){
+  document.getElementById('statTotal').innerHTML=`<b>${DB.length}</b> оголошень`;
+  document.getElementById('statSell').textContent=DB.filter(l=>l.type==='sell').length;
+  document.getElementById('statBuy').textContent=DB.filter(l=>l.type==='buy').length;
+}
+
+function setChip(key,val,el){
+  filters[key]=val;
+  document.querySelectorAll(`[data-f="${key}"]`).forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  filterCards();
+}
+
+function resetFilters(){
+  filters={type:'all',season:'all',cond:'all',cat:'all'};
+  document.querySelectorAll('.chip[data-f]').forEach(b=>{b.classList.toggle('on',b.dataset.v==='all')});
+  document.getElementById('wFilter').value='';
+  document.getElementById('rFilter').value='';
+  document.getElementById('cFilter').value='';
+  document.getElementById('searchInput').value='';
+  setCat('all');
+  filterCards();
+}
+
+function toggleFav(e,id){
+  e.stopPropagation();
+  favs.has(id)?favs.delete(id):favs.add(id);
+  renderCards();
+  toast(favs.has(id)?'Додано в обране':'Видалено з обраного');
+}
+
+function openDetail(id){
+  const l=DB.find(x=>x.id===id);
+  if(!l)return;
+  document.getElementById('detailTitle').textContent=l.brand;
+  document.getElementById('detailBody').innerHTML=`
+    ${l.photos&&l.photos.length?`
+    <div style="margin-bottom:1rem">
+      <div id="mainPhoto" style="height:180px;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg-alt);margin-bottom:6px">
+        <img src="${l.photos[0]}" style="width:100%;height:100%;object-fit:cover;display:block" id="mainPhotoImg">
+      </div>
+      ${l.photos.length>1?`<div style="display:flex;gap:5px">${l.photos.map((p,i)=>`<div onclick="document.getElementById('mainPhotoImg').src='${p}'" style="width:48px;height:48px;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ${i===0?'var(--accent)':'var(--border)'};flex-shrink:0"><img src="${p}" style="width:100%;height:100%;object-fit:cover"></div>`).join('')}</div>`:''}
+    </div>`:''}
+    <div class="detail-stats">
+      ${l.cat==='rim'
+        ? `<div class="ds-item"><div class="ds-label">Діаметр/PCD</div><div class="ds-val">${l.size||'—'}</div></div>
+           <div class="ds-item"><div class="ds-label">Матеріал</div><div class="ds-val">${l.rimMat==='steel'?'Сталеві':l.rimMat==='alloy'?'Литі':'Ковані'}</div></div>`
+        : `<div class="ds-item"><div class="ds-label">Розмір</div><div class="ds-val">${l.size}</div></div>
+           <div class="ds-item"><div class="ds-label">Сезон</div><div class="ds-val">${SI[l.season||'summer']} ${S[l.season||'summer']}</div></div>`
+      }
+      <div class="ds-item"><div class="ds-label">Стан</div><div class="ds-val">${l.cond==='new'?'Нові':'Б/У'}</div></div>
+      <div class="ds-item"><div class="ds-label">Кількість</div><div class="ds-val">${l.qty} шт</div></div>
+    </div>
+    <div class="detail-price">${l.price.toLocaleString('uk-UA')} грн</div>
+    <div class="detail-city"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.city} · ${l.type==='sell'?'Продам':'Куплю'}</div>
+    ${l.desc?`<div class="detail-desc">${l.desc}</div>`:''}
+    <button class="phone-btn" onclick="toast('Телефон: ${l.phone}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.7 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.07 6.07l.95-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${l.phone}</button>
+  `;
+  openModal('detailModal');
+}
+
+let _topupAmt=0;
+
+async function doTopup(){
+  if(!_topupAmt){toast('Оберіть суму поповнення');return;}
+  if(!currentUser){toast('Спочатку увійдіть в акаунт');return;}
+  const phone=currentUser.phone||'невідомо';
+  const name=currentUser.name||'';
+  // Save topup request to Firestore
+  try{
+    await db.collection('topupRequests').add({
+      uid:currentUser.uid, name, phone, amt:_topupAmt,
+      date:new Date().toLocaleString('uk-UA'), status:'pending', createdAt:Date.now()
+    });
+  }catch(e){console.error(e);}
+  const subj=encodeURIComponent('Поповнення рахунку ШиноМаркет');
+  const body=encodeURIComponent(
+    'Заявка на поповнення рахунку:\n\n'+
+    'Ім\'я: '+name+'\n'+
+    'Телефон: '+phone+'\n'+
+    'Сума: '+_topupAmt+' грн\n\n'+
+    'Надішліть рахунок (IBAN) в SMS або Viber на вказаний номер.'
+  );
+  window.open('mailto:ckbbuild@gmail.com?subject='+subj+'&body='+body);
+  closeModal('topupModal');
+  toast('Заявку відправлено! Очікуйте рахунок в SMS/Viber');
+}
+
+function setTopupAmt(n){
+  _topupAmt=n;
+  document.querySelectorAll('#topupQuick .chip').forEach(b=>{
+    const isThis=b.textContent.startsWith(n+' грн')||b.textContent.startsWith(n+'\n');
+    b.classList.toggle('on',isThis);
+  });
+  const sel=document.getElementById('topupSelected');
+  const selAmt=document.getElementById('topupSelectedAmt');
+  if(sel&&selAmt){sel.style.display='flex';selAmt.textContent=n+' грн';}
+  const btn=document.getElementById('topupSendBtn');
+  if(btn){btn.disabled=false;btn.style.opacity='1';btn.style.cursor='pointer';}
+}
+
+function doTopup(){
+  if(!_topupAmt){toast('Оберіть суму поповнення');return;}
+  if(!currentUser){toast('Спочатку увійдіть в акаунт');return;}
+  const phone=currentUser.phone||'невідомо';
+  const name=currentUser.name||'';
+  const subj=encodeURIComponent('Поповнення рахунку ШиноМаркет');
+  const body=encodeURIComponent(
+    'Заявка на поповнення рахунку:\n\n'+
+    'Ім\'я: '+name+'\n'+
+    'Телефон: '+phone+'\n'+
+    'Сума: '+_topupAmt+' грн\n\n'+
+    'Будь ласка, надішліть рахунок (IBAN) в SMS або Viber на вказаний номер.'
+  );
+  window.open('mailto:ckbbuild@gmail.com?subject='+subj+'&body='+body);
+  closeModal('topupModal');
+  toast('Заявку відправлено! Очікуйте рахунок в SMS/Viber');
+}
+
+function updateBalanceUI(){
+  const bal=currentUser?currentUser.balance||0:0;
+  const fmt=bal.toLocaleString('uk-UA')+' грн';
+  const bd=document.getElementById('balanceDisplay');
+  const tb=document.getElementById('topupBalance');
+  if(bd)bd.textContent=fmt;
+  if(tb)tb.textContent=fmt;
+}
+
+function setAdType(t){
+  adType=t;
+  document.getElementById('aTypeSell').classList.toggle('on',t==='sell');
+  document.getElementById('aTypeBuy').classList.toggle('on',t==='buy');
+}
+function setAdCond(c){
+  adCond=c;
+  document.getElementById('aCondNew').classList.toggle('on',c==='new');
+  document.getElementById('aCondUsed').classList.toggle('on',c==='used');
+}
+
+document.getElementById('aBrand').addEventListener('change',function(){
+  const isCustom=this.value==='Інша марка';
+  document.getElementById('brandCustomWrap').style.display=isCustom?'block':'none';
+  if(isCustom)document.getElementById('aBrandCustom').focus();
+});
+document.getElementById('aSize').addEventListener('change',function(){
+  const isCustom=this.value==='custom_size';
+  document.getElementById('sizeCustomWrap').style.display=isCustom?'block':'none';
+  if(isCustom)document.getElementById('aSizeCustom').focus();
+});
+
+async function submitAd(){
+  if(adCat==='service'){
+    const name=document.getElementById('aSvcName').value.trim();
+    if(!name){toast('Введіть назву СТО');return;}
+    if(!checkField(document.getElementById('aSvcName'),'Назва СТО')) return;
+    if(!checkField(document.getElementById('aSvcAddr'),'Адреса')) return;
+    if(!checkField(document.getElementById('aSvcHours'),'Режим роботи')) return;
+    if(!checkField(document.getElementById('aSvcDesc'),'Опис')) return;
+    if(!svcPhotos.length){toast('Додайте хоча б одне фото СТО (обов\'язково)');return;}
+    if(!svcSelectedKeywords.length){toast('Оберіть хоча б один вид послуг');return;}
+    const svcCost=70+(svcSelectedKeywords.length-1)*30;
+    if(!currentUser){closeModal('addModal');openModal('loginModal');toast('Увійдіть, щоб подати оголошення');return;}
+    if((currentUser.balance||0)<svcCost){toast('Недостатньо коштів. Потрібно '+svcCost+' грн');openModal('topupModal');return;}
+    currentUser.balance-=svcCost;
+    updateBalanceUI();updateHeaderAuth();
+    const addr=document.getElementById('aSvcAddr').value.trim();
+    const hours=document.getElementById('aSvcHours').value.trim();
+    const desc=document.getElementById('aSvcDesc').value.trim();
+    const svcData={cat:'service',type:'sell',brand:name,size:addr||'Звягель',season:'summer',cond:'new',keywords:[...svcSelectedKeywords],hours,desc,price:svcCost,qty:1,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,photos:[...svcPhotos],date:Date.now(),expiresAt:Date.now()+28*86400000};
+    try{
+      await db.collection('listings').add(svcData);
+      await db.collection('users').doc(currentUser.uid).update({balance:currentUser.balance});
+    }catch(e){toast('Помилка збереження: '+e.message);return;}
+    closeModal('addModal');
+    svcSelectedKeywords=[];svcPhotos=[];
+    await loadListings();
+    toast('СТО опубліковано!');
+    return;
+  }
+  let brand='',size='';
+  if(adCat==='tire'){
+    const bs=document.getElementById('aBrand').value;
+    brand=bs==='Інша марка'?document.getElementById('aBrandCustom').value.trim():bs;
+    const ss=document.getElementById('aSize').value;
+    size=ss==='custom_size'?document.getElementById('aSizeCustom').value.trim():ss;
+    if(!brand){toast('Оберіть марку шини');return;}
+  } else {
+    const rb=document.getElementById('aRimBrand').value;
+    brand=rb==='Інша марка дисків'?'Диски (інша марка)':rb;
+    const dia=document.getElementById('aRimDia').value;
+    const pcd=document.getElementById('aRimPCD').value;
+    const w=document.getElementById('aRimWidth').value;
+    size=[dia,pcd,w].filter(Boolean).join(' ');
+    if(!brand){toast('Оберіть марку дисків');return;}
+  }
+  const price=parseInt(document.getElementById('aPrice').value)||0;
+  const qty=parseInt(document.getElementById('aQty').value)||4;
+  const season=adCat==='tire'?document.getElementById('aSeason').value:'summer';
+  const desc=document.getElementById('aDesc').value.trim();
+  if(!checkField(document.getElementById('aBrandCustom'),'Марка')) return;
+  if(!checkField(document.getElementById('aSizeCustom'),'Розмір')) return;
+  if(!checkField(document.getElementById('aDesc'),'Опис')) return;
+  if(!price){document.getElementById('aPrice').focus();toast('Вкажіть ціну');return;}
+  if(!currentUser){closeModal('addModal');openModal('loginModal');toast('Увійдіть, щоб подати оголошення');return;}
+  if((currentUser.balance||0)<10){toast('Недостатньо коштів. Поповніть рахунок на 10 грн');openModal('topupModal');return;}
+  currentUser.balance-=10;
+  updateBalanceUI();updateHeaderAuth();
+  const adData={cat:adCat,type:adType,brand,size,season,cond:adCond,rimMat:adCat==='rim'?rimMat:null,price,qty,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,desc,photos:[...adPhotos],date:Date.now(),expiresAt:Date.now()+28*86400000};
+  try{
+    await db.collection('listings').add(adData);
+    await db.collection('users').doc(currentUser.uid).update({balance:currentUser.balance});
+  }catch(e){toast('Помилка збереження: '+e.message);return;}
+  closeModal('addModal');
+  document.getElementById('aBrand').value='';
+  document.getElementById('aSize').value='';
+  document.getElementById('aRimBrand').value='';
+  document.getElementById('aRimDia').value='';
+  document.getElementById('aRimPCD').value='';
+  document.getElementById('aRimWidth').value='';
+  document.getElementById('brandCustomWrap').style.display='none';
+  document.getElementById('sizeCustomWrap').style.display='none';
+  ['aBrandCustom','aSizeCustom','aPrice','aDesc'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('aQty').value='4';
+  adPhotos=[];renderPhotoGrid();
+  await loadListings();
+  toast('Оголошення опубліковано!');
+}
+
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='addModal')prepareAddModal();
+  if(id==='loginModal')switchAuthTab('login');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function closeOverlay(e,id){
+  if(e.target===e.currentTarget||e.target.classList.contains('overlay'))closeModal(id);
+}
+
+let _toastTimer;
+function toast(msg){
+  const el=document.getElementById('toastEl');
+  document.getElementById('toastMsg').textContent=msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+// ═══ АНТИМАТЮК ═══
+const BAD_WORDS = [
+  // Українські
+  'блять','бля','сука','пизд','піzд','піздець','пиздець','хуй','хуя','хуєць','хуєво','єбать','єбан','єбло','йобан','йобать',
+  'їбать','їбан','їбло','єб','їб','залупа','залупін','мудак','мудила','мудло','піздюк','пиздюк','піздун','пиздун',
+  'долбоєб','долбойоб','довбойоб','манда','мандавошка','cука','падла','падлюка','шлюха','шльоха','повія','курва',
+  'курвін','блядь','блядина','бляха','бляхер','собака','сволота','сволоч','ублюдок','виродок','мразь','гівно','гавно',
+  // Російські (часто використовуються)
+  'блядь','пизда','хуй','ебать','ёбать','сука','мудак','залупа','долбоёб','манда','шлюха','ублюдок','мразь',
+  // Транслітерація
+  'blyad','pizda','khuy','ebat','suka','mudak','zalupa','manda','shlyukha',
+  // З заміною літер
+  'х*й','п*зда','б*ять','с*ка','м*дак','х**','п**','б***',
+];
+
+const BAD_REGEX = new RegExp(
+  BAD_WORDS.map(w => w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),
+  'gi'
+);
+
+function containsBadWords(text){
+  return BAD_REGEX.test(text);
+}
+
+function censorText(text){
+  return text.replace(BAD_REGEX, match => match[0] + '*'.repeat(match.length - 1));
+}
+
+function checkField(el, fieldName){
+  if(!el) return true;
+  const val = el.value.trim();
+  if(containsBadWords(val)){
+    el.style.borderColor = 'var(--red)';
+    el.style.boxShadow = '0 0 0 2px rgba(163,48,29,0.15)';
+    toast('⚠️ Поле "'+fieldName+'" містить недопустимі слова');
+    el.focus();
+    return false;
+  }
+  el.style.borderColor = '';
+  el.style.boxShadow = '';
+  return true;
+}
+
+// Реалтайм підсвічування при введенні
+function attachAntiBad(elId, fieldName){
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.addEventListener('input', function(){
+    if(containsBadWords(this.value)){
+      this.style.borderColor = 'var(--red)';
+      this.style.boxShadow = '0 0 0 2px rgba(163,48,29,0.15)';
+    } else {
+      this.style.borderColor = '';
+      this.style.boxShadow = '';
+    }
+  });
+}
+
+// Прив'язуємо до всіх текстових полів
+['aBrandCustom','aSizeCustom','aDesc','aSvcName','aSvcAddr','aSvcHours','aSvcDesc',
+ 'regName','loginPhone','regPhone','aCity'].forEach(id => attachAntiBad(id, id));
+
+
+function handlePhotos(input){
+  const files=Array.from(input.files);
+  const remaining=5-adPhotos.length;
+  const toAdd=files.slice(0,remaining);
+  if(files.length>remaining) toast(`Максимум 5 фото. Додано перших ${toAdd.length}`);
+  toAdd.forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      adPhotos.push(e.target.result);
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(f);
+  });
+  input.value='';
+}
+
+function renderPhotoGrid(){
+  const grid=document.getElementById('photoGrid');
+  let html=adPhotos.map((src,i)=>`
+    <div class="photo-thumb">
+      <img src="${src}" alt="фото ${i+1}">
+      ${i===0?'<span class="photo-main-badge">ГОЛОВНЕ</span>':''}
+      <button class="photo-del" onclick="removePhoto(${i})" title="Видалити">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+      </button>
+    </div>
+  `).join('');
+  if(adPhotos.length<5){
+    html+=`<button type="button" id="photoAddBtn" onclick="document.getElementById('aPhotos').click()" style="aspect-ratio:1;border:1.5px dashed var(--border-mid);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--text-muted);font-size:11px;font-family:sans-serif;transition:all 0.15s;padding:4px" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border-mid)'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Додати
+    </button>`;
+  }
+  grid.innerHTML=html;
+}
+
+function removePhoto(i){
+  adPhotos.splice(i,1);
+  renderPhotoGrid();
+}
+
+loadListings();
+updateHeaderAuth();
+
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click',function(e){
+    if(e.target===this)closeModal(this.id);
+  });
+});
+</script>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div class="overlay" id="adminModal">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:620px">
+    <div class="modal-head" style="background:var(--accent);color:var(--accent-text);border-radius:var(--radius) var(--radius) 0 0">
+      <h2 style="color:var(--accent-text);display:flex;align-items:center;gap:8px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Адмін-панель
+      </h2>
+      <button class="close-btn" onclick="closeModal('adminModal')" style="background:rgba(255,255,255,0.15);color:var(--accent-text)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="adminLoginSection">
+      <div class="modal-body">
+        <div style="text-align:center;padding:1rem 0 1.5rem">
+          <div style="width:56px;height:56px;background:var(--bg-alt);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <p style="font-size:15px;font-weight:600;margin-bottom:4px">Доступ обмежено</p>
+          <p style="font-size:13px;color:var(--text-muted)">Введіть пароль адміністратора</p>
+        </div>
+        <div class="fg">
+          <input class="finput" id="adminPassInput" type="password" placeholder="Пароль адміністратора" onkeydown="if(event.key==='Enter')checkAdminPass()">
+        </div>
+        <div id="adminPassError" style="display:none;font-size:12px;color:var(--red);margin-top:4px;text-align:center">Невірний пароль</div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" onclick="closeModal('adminModal')">Скасувати</button>
+        <button class="btn btn-dark" onclick="checkAdminPass()">Увійти</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="adminDashSection" style="display:none">
+      <!-- TABS -->
+      <div style="display:flex;border-bottom:1px solid var(--border)">
+        <button class="admin-tab on" id="tabUsersBtn" onclick="switchAdminTab('users')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--text);font-family:'Manrope',sans-serif">Клієнти</button>
+        <button class="admin-tab" id="tabTopupBtn" onclick="switchAdminTab('topup')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Заявки поповнення</button>
+        <button class="admin-tab" id="tabAdsBtn" onclick="switchAdminTab('ads')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Оголошення</button>
+      </div>
+
+      <!-- USERS TAB -->
+      <div id="adminTabUsers" class="modal-body" style="padding:1rem;max-height:60vh;overflow-y:auto">
+        <div id="adminUsersList"></div>
+      </div>
+
+      <!-- TOPUP TAB -->
+      <div id="adminTabTopup" class="modal-body" style="display:none;padding:1rem;max-height:60vh;overflow-y:auto">
+        <div id="adminTopupList"></div>
+      </div>
+
+      <!-- ADS TAB -->
+      <div id="adminTabAds" class="modal-body" style="display:none;padding:1rem;max-height:60vh;overflow-y:auto">
+        <div id="adminAdsList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Admin trigger: triple-tap footer -->
+<script>
+const ADMIN_PASS = 'admin2025';
+let adminLoggedIn = false;
+let topupRequests = [];
+let blockedPhones = new Set();
+
+
+
+function checkAdminPass(){
+  const v = document.getElementById('adminPassInput').value;
+  if(v === ADMIN_PASS){
+    adminLoggedIn = true;
+    document.getElementById('adminLoginSection').style.display='none';
+    document.getElementById('adminDashSection').style.display='block';
+    renderAdminUsers();
+  } else {
+    document.getElementById('adminPassError').style.display='block';
+    document.getElementById('adminPassInput').value='';
+  }
+}
+
+function switchAdminTab(tab){
+  ['users','topup','ads'].forEach(t=>{
+    document.getElementById('adminTab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'block':'none';
+    const btn = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)+'Btn');
+    btn.style.borderBottomColor = t===tab?'var(--accent)':'transparent';
+    btn.style.color = t===tab?'var(--text)':'var(--text-muted)';
+  });
+  if(tab==='users') renderAdminUsers();
+  if(tab==='topup') renderAdminTopup();
+  if(tab==='ads')   renderAdminAds();
+}
+
+async function renderAdminUsers(){
+  const el = document.getElementById('adminUsersList');
+  el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:13px">Завантаження...</div>';
+  try{
+    const snap = await db.collection('users').get();
+    const users = snap.docs.map(d=>({uid:d.id,...d.data()}));
+    if(!users.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:13px">Немає зареєстрованих клієнтів</div>';return;}
+    el.innerHTML = users.map(u=>{
+      const blocked = u.blocked||false;
+      return`<div style="display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;${blocked?'opacity:0.5;background:var(--red-bg)':'background:var(--bg-card)'}">
+        <div style="width:38px;height:38px;border-radius:50%;background:${blocked?'var(--red-bg)':'var(--bg-alt)'};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;color:${blocked?'var(--red)':'var(--text-muted)'}">
+          ${(u.name||'?').charAt(0).toUpperCase()}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;margin-bottom:2px">${u.name||'—'} ${blocked?'<span style="font-size:10px;color:var(--red);font-weight:700">ЗАБЛОКОВАНО</span>':''}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${u.phone||'—'} · ${(u.balance||0)} грн</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+          <button onclick="adminTopupUser('${u.uid}','${u.name||''}')" style="padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--green);background:var(--green-bg);color:var(--green);font-size:11px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif;white-space:nowrap">+ Зарахувати</button>
+          <button onclick="adminToggleBlock('${u.uid}',${blocked})" style="padding:5px 10px;border-radius:var(--radius-sm);border:1px solid ${blocked?'var(--amber)':'var(--red)'};background:${blocked?'var(--amber-bg)':'var(--red-bg)'};color:${blocked?'var(--amber)':'var(--red)'};font-size:11px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif;white-space:nowrap">${blocked?'🔓 Розблок.':'🔒 Заблок.'}</button>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--red);padding:1rem">Помилка: '+e.message+'</div>';}
+}
+
+async function adminTopupUser(uid, name){
+  const amt = prompt('Сума зарахування для '+name+' (грн):');
+  if(!amt||isNaN(+amt)||+amt<=0) return;
+  try{
+    const snap = await db.collection('users').doc(uid).get();
+    const bal = (snap.data().balance||0)+(+amt);
+    await db.collection('users').doc(uid).update({balance:bal});
+    if(currentUser&&currentUser.uid===uid){currentUser.balance=bal;updateBalanceUI();updateHeaderAuth();}
+    renderAdminUsers();
+    toast('Зараховано '+amt+' грн для '+name);
+  }catch(e){toast('Помилка: '+e.message);}
+}
+
+async function adminToggleBlock(uid, isBlocked){
+  if(!isBlocked&&!confirm('Заблокувати клієнта?')) return;
+  try{
+    await db.collection('users').doc(uid).update({blocked:!isBlocked});
+    renderAdminUsers();
+    toast(isBlocked?'Клієнта розблоковано':'Клієнта заблоковано');
+  }catch(e){toast('Помилка: '+e.message);}
+}
+
+async function renderAdminTopup(){
+  const el = document.getElementById('adminTopupList');
+  el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:13px">Завантаження...</div>';
+  try{
+    const snap = await db.collection('topupRequests').orderBy('createdAt','desc').get();
+    const reqs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!reqs.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:13px">Заявок поки немає</div>';return;}
+    el.innerHTML = reqs.map(r=>`
+      <div style="padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;background:${r.status==='done'?'var(--green-bg)':'var(--bg-card)'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div><span style="font-size:13px;font-weight:600">${r.name}</span><span style="font-size:12px;color:var(--text-muted);margin-left:6px">${r.phone}</span></div>
+          <span style="font-size:16px;font-weight:700;font-family:'Unbounded',sans-serif">${r.amt} грн</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;color:var(--text-hint)">${r.date}</span>
+          ${r.status==='done'
+            ? '<span style="font-size:11px;color:var(--green);font-weight:700">✓ Зараховано</span>'
+            : `<button onclick="adminConfirmTopup('${r.id}','${r.uid}',${r.amt},'${r.name}')" style="padding:5px 12px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:12px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif">Зарахувати</button>`
+          }
+        </div>
+      </div>
+    `).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--red);padding:1rem">Помилка: '+e.message+'</div>';}
+}
+
+async function adminConfirmTopup(reqId, uid, amt, name){
+  try{
+    const snap = await db.collection('users').doc(uid).get();
+    const bal = (snap.data().balance||0)+amt;
+    await db.collection('users').doc(uid).update({balance:bal});
+    await db.collection('topupRequests').doc(reqId).update({status:'done'});
+    if(currentUser&&currentUser.uid===uid){currentUser.balance=bal;updateBalanceUI();updateHeaderAuth();}
+    renderAdminTopup();
+    toast('Зараховано '+amt+' грн для '+name);
+  }catch(e){toast('Помилка: '+e.message);}
+}
+
+async function renderAdminAds(){
+  const el = document.getElementById('adminAdsList');
+  el.innerHTML='<div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:13px">Завантаження...</div>';
+  try{
+    const snap = await db.collection('listings').orderBy('date','desc').get();
+    const ads = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!ads.length){el.innerHTML='<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:13px">Оголошень немає</div>';return;}
+    el.innerHTML = ads.map(l=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;background:var(--bg-card)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.brand}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${l.size||''} · ${l.city} · ${l.phone||''}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${(l.price||0).toLocaleString('uk-UA')} грн · ${l.type==='sell'?'Продаю':'Купую'}</div>
+        </div>
+        <button onclick="adminDeleteAd('${l.id}')" style="padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--red);background:var(--red-bg);color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif;flex-shrink:0">Видалити</button>
+      </div>
+    `).join('');
+  }catch(e){el.innerHTML='<div style="color:var(--red);padding:1rem">Помилка: '+e.message+'</div>';}
+}
+
+async function adminDeleteAd(id){
+  if(!confirm('Видалити оголошення?')) return;
+  try{
+    await db.collection('listings').doc(id).delete();
+    await loadListings();
+    renderAdminAds();
+    toast('Оголошення видалено');
+  }catch(e){toast('Помилка: '+e.message);}
+}
+
+function openAdminPanel(){
+  document.getElementById('adminPassInput').value='';
+  document.getElementById('adminPassError').style.display='none';
+  if(adminLoggedIn){
+    document.getElementById('adminLoginSection').style.display='none';
+    document.getElementById('adminDashSection').style.display='block';
+    switchAdminTab('users');
+  } else {
+    document.getElementById('adminLoginSection').style.display='block';
+    document.getElementById('adminDashSection').style.display='none';
+  }
+  openModal('adminModal');
+}
+
+// Block check on ad submit
+const _origSubmitAd = submitAd;
+window.submitAdWithBlockCheck = function(){
+  if(currentUser && currentUser.blocked){
+    toast('Ваш акаунт заблоковано. Зверніться до адміністратора.');
+    return;
+  }
+  submitAd();
+};
+// Override submit button
+document.querySelector('[onclick="submitAd()"]') && 
+  document.querySelector('[onclick="submitAd()"]').setAttribute('onclick','submitAdWithBlockCheck()');
+</script>
+<!-- ═══ ПРАВИЛА ═══ -->
+<div class="overlay" id="rulesModal">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:560px">
+    <div class="modal-head">
+      <h2>Правила користування</h2>
+      <button class="close-btn" onclick="closeModal('rulesModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body" style="font-size:13px;line-height:1.7;color:var(--text-muted)">
+
+      <p style="margin-bottom:1rem;color:var(--text);font-weight:600">Шина.Звягель — локальний майданчик купівлі та продажу шин, дисків та автомобільних послуг у місті Звягель та районі.</p>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">1. Загальні положення</div>
+        <p>Розміщуючи оголошення, ви погоджуєтесь з цими правилами. Адміністрація залишає за собою право видаляти оголошення та блокувати акаунти без попередження у разі порушення правил.</p>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">2. Правила розміщення оголошень</div>
+        <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:4px">
+          <li>Одне оголошення — один товар або послуга. Дублювання заборонено.</li>
+          <li>Заголовок та опис мають відповідати реальному товару.</li>
+          <li>Ціна має бути реальною та актуальною.</li>
+          <li>Фотографії повинні відповідати товару, що продається.</li>
+          <li>Розміщення чужих фотографій без дозволу заборонено.</li>
+          <li>Оголошення про послуги СТО — обов'язкова наявність фото.</li>
+          <li>Оголошення діє 28 днів, після чого знімається автоматично.</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">3. Заборонено розміщувати</div>
+        <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:4px">
+          <li>Крадені товари або товари сумнівного походження.</li>
+          <li>Підроблені шини або диски без попередження покупця.</li>
+          <li>Оголошення з нецензурними словами, образами, погрозами.</li>
+          <li>Спам, однакові оголошення від одного користувача.</li>
+          <li>Контактні дані в тексті оголошення (лише через систему).</li>
+          <li>Товари, заборонені законодавством України.</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">4. Відповідальність сторін</div>
+        <p>Майданчик є лише посередником між продавцем та покупцем. Адміністрація не несе відповідальності за якість товару, достовірність інформації в оголошеннях та результати угод між користувачами. Перевіряйте товар перед оплатою.</p>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">5. Оплата та повернення коштів</div>
+        <p>Кошти, списані за розміщення оголошення, не повертаються. У разі видалення оголошення адміністрацією за порушення правил — кошти також не повертаються. При технічних збоях з вини сайту — розгляд питання в індивідуальному порядку.</p>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">6. Блокування акаунтів</div>
+        <p>Акаунт може бути заблокований за: систематичне порушення правил, розміщення забороненого контенту, скарги від інших користувачів, підозру в шахрайстві. Оскарження блокування — на пошту <a href="mailto:shina.zvyagel@gmail.com" style="color:var(--text)">shina.zvyagel@gmail.com</a>.</p>
+      </div>
+
+      <div style="padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);font-size:12px">
+        Остання редакція: травень 2026 р. Адміністрація залишає за собою право змінювати правила без попереднього повідомлення.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-dark" onclick="closeModal('rulesModal')">Зрозуміло</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ КОНТАКТИ ═══ -->
+<div class="overlay" id="contactsModal">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>Контакти</h2>
+      <button class="close-btn" onclick="closeModal('contactsModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;padding:0.5rem 0 1.5rem">
+        <div style="width:60px;height:60px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-text)" stroke-width="2" style="width:26px;height:26px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+        </div>
+        <div style="font-size:18px;font-weight:700;font-family:'Unbounded',sans-serif;letter-spacing:-0.02em;margin-bottom:4px">Шина.Звягель</div>
+        <div style="font-size:13px;color:var(--text-muted)">Локальний майданчик шин та дисків</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;color:var(--text-muted)"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div>
+            <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:1px">Адреса</div>
+            <div style="font-size:13px;font-weight:600">Україна, м. Звягель</div>
+          </div>
+        </div>
+
+        <a href="mailto:shina.zvyagel@gmail.com" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);text-decoration:none;color:var(--text);transition:background 0.15s" onmouseover="this.style.background='var(--bg-alt)'" onmouseout="this.style.background='var(--bg)'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;color:var(--text-muted)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <div>
+            <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:1px">Email</div>
+            <div style="font-size:13px;font-weight:600;color:var(--green)">shina.zvyagel@gmail.com</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-left:auto;color:var(--text-hint)"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;color:var(--text-muted)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div style="font-size:10px;color:var(--text-hint);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:1px">Відповідь на листи</div>
+            <div style="font-size:13px;font-weight:600">Протягом 24 годин</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-dark" onclick="closeModal('contactsModal')">Закрити</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ РЕКЛАМА ═══ -->
+<div class="overlay" id="advertModal">
+  <div class="modal modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <h2>Банерна реклама</h2>
+      <button class="close-btn" onclick="closeModal('advertModal')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:center;padding:0.5rem 0 1.25rem">
+        <div style="width:60px;height:60px;background:var(--amber-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" style="width:26px;height:26px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">Розмістіть рекламу на сайті</div>
+        <div style="font-size:13px;color:var(--text-muted)">Охопіть цільову аудиторію автолюбителів Звягеля та району</div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem">
+        <div style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style="font-size:13px">Банер у верхній частині сторінки</div>
+        </div>
+        <div style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style="font-size:13px">Закріплена картка у списку оголошень</div>
+        </div>
+        <div style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style="font-size:13px">Реклама у розділі СТО / Послуги</div>
+        </div>
+        <div style="padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);display:flex;align-items:center;gap:10px">
+          <div style="width:32px;height:32px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <div style="font-size:13px">Індивідуальні умови розміщення</div>
+        </div>
+      </div>
+
+      <div style="padding:14px;background:var(--amber-bg);border-radius:var(--radius-sm);text-align:center">
+        <div style="font-size:13px;color:var(--amber);margin-bottom:10px;line-height:1.6">
+          Для обговорення умов та цін — напишіть нам на пошту. Відповімо протягом доби.
+        </div>
+        <a href="mailto:shina.zvyagel@gmail.com?subject=Банерна реклама на Шина.Звягель" style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;background:var(--accent);color:var(--accent-text);border-radius:var(--radius-sm);font-size:13px;font-weight:700;text-decoration:none;font-family:'Manrope',sans-serif">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          shina.zvyagel@gmail.com
+        </a>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('advertModal')">Закрити</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
