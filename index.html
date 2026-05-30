@@ -23,6 +23,27 @@
   const db = firebase.firestore();
   const auth = firebase.auth();
 </script>
+<script>
+// ═══ ЦІНИ (змінюються в адмінці) ═══
+let PRICES = {
+  tire_publish: 10,        // публікація шини/диска
+  tire_renew: 10,          // продовження шини/диска
+  svc_first_kw: 70,        // перше ключове слово СТО
+  svc_extra_kw: 30,        // кожне наступне ключове слово
+  svc_renew: 60,           // продовження всіх оголошень СТО/місяць
+  svc_map: 25,             // карта для СТО
+  active_days: 28,         // днів активне
+  inactive_days: 28,       // днів неактивне (перед видаленням)
+};
+
+async function loadPrices(){
+  try{
+    const snap = await db.collection('config').doc('prices').get();
+    if(snap.exists) PRICES = {...PRICES, ...snap.data()};
+  }catch(e){}
+}
+loadPrices();
+</script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -921,7 +942,15 @@
           <textarea class="finput" id="aSvcDesc" rows="2" placeholder="Досвід роботи, обладнання, особливості..." style="resize:vertical;line-height:1.5"></textarea>
         </div>
         <div class="fg">
-          <label class="fl">Фото (обов'язково, до 5 штук)</label>
+          <label class="fl">Карта (опційно +25 грн)</label>
+          <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border-mid);border-radius:var(--radius-sm);cursor:pointer;font-size:13px;background:var(--bg)">
+            <input type="checkbox" id="aSvcMap" style="accent-color:var(--accent);width:16px;height:16px" onchange="updateSvcPrice()">
+            <div>
+              <div style="font-weight:600">Показати на карті</div>
+              <div style="font-size:11px;color:var(--text-muted)">Клієнти побачать ваше СТО на карті Звягеля</div>
+            </div>
+          </label>
+        </div>
           <input type="file" id="aSvcPhotos" accept="image/*" multiple style="display:none" onchange="handleSvcPhotos(this)">
           <div id="svcPhotoGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
             <button type="button" onclick="document.getElementById('aSvcPhotos').click()" style="aspect-ratio:1;border:2px dashed var(--red);border-radius:var(--radius-sm);background:var(--red-bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--red);font-size:10px;font-family:sans-serif;padding:4px">
@@ -1315,12 +1344,29 @@ function prepareAddModal(){
   updateBalanceUI();
 }
 
-// ═══ ЗАВАНТАЖЕННЯ ОГОЛОШЕНЬ З FIREBASE ═══
+// ═══ ПЕРЕВІРКА СТАТУСІВ ═══
+function checkExpiry(l){
+  const now = Date.now();
+  if(l.status==='active' && l.expiresAt && now > l.expiresAt) return 'inactive';
+  if(l.status==='inactive' && l.deleteAt && now > l.deleteAt) return 'delete';
+  return l.status||'active';
+}
+
 async function loadListings(){
   document.getElementById('resultCount').innerHTML='Завантаження...';
   try{
     const snap = await db.collection('listings').orderBy('date','desc').limit(200).get();
     DB = snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Оновити статуси прострочених
+    for(const l of DB){
+      const newStatus = checkExpiry(l);
+      if(newStatus !== (l.status||'active') && newStatus !== 'delete'){
+        l.status = newStatus;
+        db.collection('listings').doc(l.id).update({status:'inactive'}).catch(()=>{});
+      }
+    }
+    // Фільтруємо видалені
+    DB = DB.filter(l => checkExpiry(l) !== 'delete');
     filterCards();
   } catch(e){
     console.error('Firestore error:',e);
@@ -1381,6 +1427,19 @@ function initSvcKeywords(){
   `).join('');
 }
 
+function updateSvcPrice(){
+  const count = svcSelectedKeywords.length;
+  const mapExtra = document.getElementById('aSvcMap')&&document.getElementById('aSvcMap').checked ? PRICES.svc_map : 0;
+  const price = count===0 ? 0 : PRICES.svc_first_kw + (count-1)*PRICES.svc_extra_kw + mapExtra;
+  document.getElementById('svcSelectedCount').textContent = count;
+  document.getElementById('svcPrice').textContent = price+' грн';
+  const pubBtn = document.querySelector('[onclick="submitAdWithBlockCheck()"]');
+  if(pubBtn && adCat==='service'){
+    pubBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg> Опублікувати · ${price} грн`;
+  }
+  return price;
+}
+
 function toggleSvcKeyword(kw, btn){
   const idx = svcSelectedKeywords.indexOf(kw);
   if(idx>-1){
@@ -1390,13 +1449,7 @@ function toggleSvcKeyword(kw, btn){
     svcSelectedKeywords.push(kw);
     btn.classList.add('on');
   }
-  const count = svcSelectedKeywords.length;
-  const price = count===0 ? 0 : 70 + (count-1)*30;
-  document.getElementById('svcSelectedCount').textContent = count;
-  document.getElementById('svcPrice').textContent = price+' грн';
-  // update publish button
-  const pubBtn = document.querySelector('[onclick="submitAdWithBlockCheck()"]');
-  if(pubBtn && adCat==='service') pubBtn.textContent = `✓ Опублікувати · ${price} грн`;
+  updateSvcPrice();
 }
 
 function renderSvcPhotoGrid(){
@@ -1487,6 +1540,8 @@ function renderCards(){
     const isFav=favs.has(l.id);
     const isRim=l.cat==='rim';
     const isSvc=l.cat==='service';
+    const isInactive=(l.status||'active')==='inactive';
+    const isOwn = currentUser && currentUser.uid === l.uid;
     const subLine=isSvc
       ? `🔧 ${(l.keywords||[]).slice(0,2).join(' · ')}`
       : isRim
@@ -1503,6 +1558,7 @@ function renderCards(){
               ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:0.18;width:72px;height:72px"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.9" y1="4.9" x2="7.8" y2="7.8"/><line x1="16.2" y1="16.2" x2="19.1" y2="19.1"/><line x1="4.9" y1="19.1" x2="7.8" y2="16.2"/><line x1="16.2" y1="7.8" x2="19.1" y2="4.9"/></svg>`
               : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><line x1="12" y1="2" x2="12" y2="5.5"/><line x1="12" y1="18.5" x2="12" y2="22"/><line x1="2" y1="12" x2="5.5" y2="12"/><line x1="18.5" y1="12" x2="22" y2="12"/></svg>`
         }
+        ${isInactive?`<div style="position:absolute;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px"><span style="font-size:10px;font-weight:700;color:#fff;background:rgba(163,48,29,0.9);padding:3px 8px;border-radius:20px">НЕАКТИВНЕ</span>${isOwn?`<span style="font-size:10px;color:rgba(255,255,255,0.8)">Натисніть для продовження</span>`:''}</div>`:''}
         <div class="badges">
           ${isSvc
             ? '<span class="badge" style="background:#E1F5EE;color:#0F6E56;font-size:9px">СТО</span>'
@@ -1586,6 +1642,13 @@ function openDetail(id){
     <div class="detail-city"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${l.city} · ${l.type==='sell'?'Продам':'Куплю'}</div>
     ${l.desc?`<div class="detail-desc">${l.desc}</div>`:''}
     <button class="phone-btn" onclick="toast('Телефон: ${l.phone}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.7 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.07 6.07l.95-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${l.phone}</button>
+    ${(l.status==='inactive'&&currentUser&&currentUser.uid===l.uid)?`
+    <div style="margin-top:10px;padding:12px;background:var(--amber-bg);border-radius:var(--radius-sm)">
+      <div style="font-size:12px;color:var(--amber);margin-bottom:8px">⚠️ Оголошення неактивне. Продовжіть щоб воно знову з'явилось у пошуку.</div>
+      <button onclick="renewListing('${l.id}','${l.cat}')" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:13px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif">
+        Продовжити · ${l.cat==='service'?PRICES.svc_renew:PRICES.tire_renew} грн
+      </button>
+    </div>`:''}
   `;
   openModal('detailModal');
 }
@@ -1689,7 +1752,8 @@ async function submitAd(){
     if(!checkField(document.getElementById('aSvcDesc'),'Опис')) return;
     if(!svcPhotos.length){toast('Додайте хоча б одне фото СТО (обов\'язково)');return;}
     if(!svcSelectedKeywords.length){toast('Оберіть хоча б один вид послуг');return;}
-    const svcCost=70+(svcSelectedKeywords.length-1)*30;
+    const withMap = document.getElementById('aSvcMap')&&document.getElementById('aSvcMap').checked;
+    const svcCost = updateSvcPrice();
     if(!currentUser){closeModal('addModal');openModal('loginModal');toast('Увійдіть, щоб подати оголошення');return;}
     if((currentUser.balance||0)<svcCost){toast('Недостатньо коштів. Потрібно '+svcCost+' грн');openModal('topupModal');return;}
     currentUser.balance-=svcCost;
@@ -1697,7 +1761,8 @@ async function submitAd(){
     const addr=document.getElementById('aSvcAddr').value.trim();
     const hours=document.getElementById('aSvcHours').value.trim();
     const desc=document.getElementById('aSvcDesc').value.trim();
-    const svcData={cat:'service',type:'sell',brand:name,size:addr||'Звягель',season:'summer',cond:'new',keywords:[...svcSelectedKeywords],hours,desc,price:svcCost,qty:1,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,photos:[...svcPhotos],date:Date.now(),expiresAt:Date.now()+28*86400000};
+    const now=Date.now();
+    const svcData={cat:'service',type:'sell',brand:name,size:addr||'Звягель',season:'summer',cond:'new',keywords:[...svcSelectedKeywords],hours,desc,price:svcCost,qty:1,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,photos:[...svcPhotos],withMap,status:'active',date:now,expiresAt:now+PRICES.active_days*86400000,deleteAt:now+(PRICES.active_days+PRICES.inactive_days)*86400000};
     try{
       await db.collection('listings').add(svcData);
       await db.collection('users').doc(currentUser.uid).update({balance:currentUser.balance});
@@ -1733,10 +1798,11 @@ async function submitAd(){
   if(!checkField(document.getElementById('aDesc'),'Опис')) return;
   if(!price){document.getElementById('aPrice').focus();toast('Вкажіть ціну');return;}
   if(!currentUser){closeModal('addModal');openModal('loginModal');toast('Увійдіть, щоб подати оголошення');return;}
-  if((currentUser.balance||0)<10){toast('Недостатньо коштів. Поповніть рахунок на 10 грн');openModal('topupModal');return;}
-  currentUser.balance-=10;
+  if((currentUser.balance||0)<PRICES.tire_publish){toast('Недостатньо коштів. Потрібно '+PRICES.tire_publish+' грн');openModal('topupModal');return;}
+  currentUser.balance-=PRICES.tire_publish;
   updateBalanceUI();updateHeaderAuth();
-  const adData={cat:adCat,type:adType,brand,size,season,cond:adCond,rimMat:adCat==='rim'?rimMat:null,price,qty,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,desc,photos:[...adPhotos],date:Date.now(),expiresAt:Date.now()+28*86400000};
+  const now2=Date.now();
+  const adData={cat:adCat,type:adType,brand,size,season,cond:adCond,rimMat:adCat==='rim'?rimMat:null,price,qty,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,desc,photos:[...adPhotos],status:'active',date:now2,expiresAt:now2+PRICES.active_days*86400000,deleteAt:now2+(PRICES.active_days+PRICES.inactive_days)*86400000};
   try{
     await db.collection('listings').add(adData);
     await db.collection('users').doc(currentUser.uid).update({balance:currentUser.balance});
@@ -1755,6 +1821,31 @@ async function submitAd(){
   adPhotos=[];renderPhotoGrid();
   await loadListings();
   toast('Оголошення опубліковано!');
+}
+
+async function renewListing(id, cat){
+  if(!currentUser){toast('Увійдіть в акаунт');return;}
+  const cost = cat==='service' ? PRICES.svc_renew : PRICES.tire_renew;
+  if((currentUser.balance||0)<cost){
+    toast('Недостатньо коштів. Потрібно '+cost+' грн');
+    closeModal('detailModal');
+    openModal('topupModal');
+    return;
+  }
+  try{
+    const now = Date.now();
+    await db.collection('listings').doc(id).update({
+      status:'active',
+      expiresAt: now + PRICES.active_days*86400000,
+      deleteAt: now + (PRICES.active_days+PRICES.inactive_days)*86400000
+    });
+    currentUser.balance -= cost;
+    await db.collection('users').doc(currentUser.uid).update({balance:currentUser.balance});
+    updateBalanceUI(); updateHeaderAuth();
+    closeModal('detailModal');
+    await loadListings();
+    toast('Оголошення продовжено на '+PRICES.active_days+' днів!');
+  }catch(e){toast('Помилка: '+e.message);}
 }
 
 function openModal(id){
@@ -2028,8 +2119,9 @@ document.querySelectorAll('.overlay').forEach(el=>{
       <!-- TABS -->
       <div style="display:flex;border-bottom:1px solid var(--border)">
         <button class="admin-tab on" id="tabUsersBtn" onclick="switchAdminTab('users')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--text);font-family:'Manrope',sans-serif">Клієнти</button>
-        <button class="admin-tab" id="tabTopupBtn" onclick="switchAdminTab('topup')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Заявки поповнення</button>
+        <button class="admin-tab" id="tabTopupBtn" onclick="switchAdminTab('topup')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Заявки</button>
         <button class="admin-tab" id="tabAdsBtn" onclick="switchAdminTab('ads')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Оголошення</button>
+        <button class="admin-tab" id="tabPricesBtn" onclick="switchAdminTab('prices')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">💰 Ціни</button>
       </div>
 
       <!-- USERS TAB -->
@@ -2045,6 +2137,14 @@ document.querySelectorAll('.overlay').forEach(el=>{
       <!-- ADS TAB -->
       <div id="adminTabAds" class="modal-body" style="display:none;padding:1rem;max-height:60vh;overflow-y:auto">
         <div id="adminAdsList"></div>
+      </div>
+      <!-- PRICES TAB -->
+      <div id="adminTabPrices" class="modal-body" style="display:none;padding:1rem;max-height:60vh;overflow-y:auto">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:1rem">Зміни набудуть чинності одразу для нових оголошень</div>
+        <div id="pricesForm"></div>
+        <button onclick="savePrices()" style="width:100%;margin-top:1rem;padding:11px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:14px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif">
+          💾 Зберегти ціни
+        </button>
       </div>
     </div>
   </div>
@@ -2073,15 +2173,53 @@ function checkAdminPass(){
 }
 
 function switchAdminTab(tab){
-  ['users','topup','ads'].forEach(t=>{
-    document.getElementById('adminTab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'block':'none';
+  ['users','topup','ads','prices'].forEach(t=>{
+    const tabEl = document.getElementById('adminTab'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(tabEl) tabEl.style.display = t===tab?'block':'none';
     const btn = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)+'Btn');
-    btn.style.borderBottomColor = t===tab?'var(--accent)':'transparent';
-    btn.style.color = t===tab?'var(--text)':'var(--text-muted)';
+    if(btn){
+      btn.style.borderBottomColor = t===tab?'var(--accent)':'transparent';
+      btn.style.color = t===tab?'var(--text)':'var(--text-muted)';
+    }
   });
   if(tab==='users') renderAdminUsers();
   if(tab==='topup') renderAdminTopup();
   if(tab==='ads')   renderAdminAds();
+  if(tab==='prices') renderAdminPrices();
+}
+
+function renderAdminPrices(){
+  const LABELS = {
+    tire_publish: 'Публікація шини/диска (грн)',
+    tire_renew: 'Продовження шини/диска (грн)',
+    svc_first_kw: 'СТО — перше ключове слово (грн)',
+    svc_extra_kw: 'СТО — кожне наступне слово (грн)',
+    svc_renew: 'СТО — продовження всіх оголошень/міс (грн)',
+    svc_map: 'СТО — карта (грн)',
+    active_days: 'Активне (днів)',
+    inactive_days: 'Неактивне перед видаленням (днів)',
+  };
+  const el = document.getElementById('pricesForm');
+  el.innerHTML = Object.entries(LABELS).map(([key,label])=>`
+    <div style="margin-bottom:10px">
+      <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:4px">${label}</label>
+      <input type="number" id="price_${key}" value="${PRICES[key]||0}" min="0" style="width:100%;padding:9px 12px;border:1.5px solid var(--border-mid);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;outline:none">
+    </div>
+  `).join('');
+}
+
+async function savePrices(){
+  const keys = ['tire_publish','tire_renew','svc_first_kw','svc_extra_kw','svc_renew','svc_map','active_days','inactive_days'];
+  const newPrices = {};
+  keys.forEach(k=>{
+    const el = document.getElementById('price_'+k);
+    if(el) newPrices[k] = parseInt(el.value)||0;
+  });
+  try{
+    await db.collection('config').doc('prices').set(newPrices);
+    PRICES = {...PRICES, ...newPrices};
+    toast('✅ Ціни збережено!');
+  }catch(e){toast('Помилка: '+e.message);}
 }
 
 async function renderAdminUsers(){
@@ -2235,7 +2373,7 @@ document.querySelector('[onclick="submitAd()"]') &&
     </div>
     <div class="modal-body" style="font-size:13px;line-height:1.7;color:var(--text-muted)">
 
-      <p style="margin-bottom:1rem;color:var(--text);font-weight:600">Шина.Звягель — локальний майданчик купівлі та продажу шин, дисків та автомобільних послуг у місті Звягель та районі.</p>
+      <p style="margin-bottom:1rem;color:var(--text);font-weight:600">Shina.live — локальний майданчик купівлі та продажу шин, дисків та автомобільних послуг у місті Звягель та районі.</p>
 
       <div style="margin-bottom:1.25rem">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">1. Загальні положення</div>
@@ -2246,44 +2384,80 @@ document.querySelector('[onclick="submitAd()"]') &&
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">2. Правила розміщення оголошень</div>
         <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:4px">
           <li>Одне оголошення — один товар або послуга. Дублювання заборонено.</li>
-          <li>Заголовок та опис мають відповідати реальному товару.</li>
+          <li>Заголовок та опис мають відповідати реальному товару або послузі.</li>
           <li>Ціна має бути реальною та актуальною.</li>
           <li>Фотографії повинні відповідати товару, що продається.</li>
           <li>Розміщення чужих фотографій без дозволу заборонено.</li>
-          <li>Оголошення про послуги СТО — обов'язкова наявність фото.</li>
-          <li>Оголошення діє 28 днів, після чого знімається автоматично.</li>
+          <li>Оголошення про послуги СТО — обов'язкова наявність фото майстерні.</li>
+          <li>Контактні дані в тексті оголошення заборонені — лише через систему.</li>
         </ul>
       </div>
 
       <div style="margin-bottom:1.25rem">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">3. Заборонено розміщувати</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">3. Вартість розміщення</div>
+
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">🔄 Шини та ⭕ Диски</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:3px;font-size:12px">
+            <li>Публікація оголошення — <b style="color:var(--text)">10 грн</b></li>
+            <li>Оголошення активне — <b style="color:var(--text)">28 днів</b></li>
+            <li>Після 28 днів — переходить у статус <b style="color:var(--text)">«Неактивне»</b>, зникає з пошуку</li>
+            <li>Продовження — <b style="color:var(--text)">10 грн</b> (ще 28 днів)</li>
+            <li>Якщо не продовжено ще 28 днів — <b style="color:var(--red)">видаляється назавжди</b></li>
+          </ul>
+        </div>
+
+        <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">🔧 СТО та Послуги</div>
+          <ul style="padding-left:1.1rem;display:flex;flex-direction:column;gap:3px;font-size:12px">
+            <li>Перше ключове слово (вид послуги) — <b style="color:var(--text)">70 грн</b></li>
+            <li>Кожне наступне ключове слово — <b style="color:var(--text)">+30 грн</b></li>
+            <li>Відображення на карті — <b style="color:var(--text)">+25 грн</b> (опційно)</li>
+            <li>Оголошення активне — <b style="color:var(--text)">28 днів</b></li>
+            <li>Після 28 днів — переходить у статус <b style="color:var(--text)">«Неактивне»</b></li>
+            <li>Продовження всіх оголошень СТО — <b style="color:var(--text)">60 грн / місяць</b></li>
+            <li>Якщо не продовжено ще 28 днів — <b style="color:var(--red)">видаляється назавжди</b></li>
+          </ul>
+        </div>
+
+        <div style="padding:8px 12px;background:var(--amber-bg);border-radius:var(--radius-sm);font-size:12px;color:var(--amber)">
+          💡 Загальний термін зберігання оголошення (активне + неактивне) — <b>56 днів</b>. Після цього дані видаляються без можливості відновлення.
+        </div>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">4. Порядок оплати</div>
+        <p>Оплата здійснюється через поповнення особистого рахунку на сайті. Для поповнення: оберіть суму → натисніть «Поповнити» → на пошту адміністратора надійде заявка → адміністратор надішле рахунок (IBAN) в SMS або Viber. Кошти зараховуються після підтвердження оплати адміністратором.</p>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">5. Заборонено розміщувати</div>
         <ul style="padding-left:1.25rem;display:flex;flex-direction:column;gap:4px">
           <li>Крадені товари або товари сумнівного походження.</li>
           <li>Підроблені шини або диски без попередження покупця.</li>
           <li>Оголошення з нецензурними словами, образами, погрозами.</li>
           <li>Спам, однакові оголошення від одного користувача.</li>
-          <li>Контактні дані в тексті оголошення (лише через систему).</li>
-          <li>Товари, заборонені законодавством України.</li>
+          <li>Товари та послуги, заборонені законодавством України.</li>
         </ul>
       </div>
 
       <div style="margin-bottom:1.25rem">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">4. Відповідальність сторін</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">6. Повернення коштів</div>
+        <p>Кошти, списані за розміщення або продовження оголошення, не повертаються. У разі видалення оголошення адміністрацією за порушення правил — кошти також не повертаються. При технічних збоях з вини сайту — розгляд в індивідуальному порядку на пошту <a href="mailto:shina.zvyagel@gmail.com" style="color:var(--text)">shina.zvyagel@gmail.com</a>.</p>
+      </div>
+
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">7. Відповідальність сторін</div>
         <p>Майданчик є лише посередником між продавцем та покупцем. Адміністрація не несе відповідальності за якість товару, достовірність інформації в оголошеннях та результати угод між користувачами. Перевіряйте товар перед оплатою.</p>
       </div>
 
       <div style="margin-bottom:1.25rem">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">5. Оплата та повернення коштів</div>
-        <p>Кошти, списані за розміщення оголошення, не повертаються. У разі видалення оголошення адміністрацією за порушення правил — кошти також не повертаються. При технічних збоях з вини сайту — розгляд питання в індивідуальному порядку.</p>
-      </div>
-
-      <div style="margin-bottom:1.25rem">
-        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">6. Блокування акаунтів</div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-hint);margin-bottom:6px">8. Блокування акаунтів</div>
         <p>Акаунт може бути заблокований за: систематичне порушення правил, розміщення забороненого контенту, скарги від інших користувачів, підозру в шахрайстві. Оскарження блокування — на пошту <a href="mailto:shina.zvyagel@gmail.com" style="color:var(--text)">shina.zvyagel@gmail.com</a>.</p>
       </div>
 
       <div style="padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);font-size:12px">
-        Остання редакція: травень 2026 р. Адміністрація залишає за собою право змінювати правила без попереднього повідомлення.
+        Остання редакція: травень 2026 р. Адміністрація залишає за собою право змінювати правила та ціни без попереднього повідомлення.
       </div>
     </div>
     <div class="modal-foot">
