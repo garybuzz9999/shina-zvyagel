@@ -645,7 +645,15 @@ loadPrices();
   </div>
 </header>
 
-<!-- HERO SEARCH -->
+<!-- PROMO BANNER -->
+<div style="background:linear-gradient(135deg,#c0392b 0%,#e74c3c 50%,#c0392b 100%);padding:13px 1.5rem;display:flex;align-items:center;justify-content:center;gap:10px;position:sticky;top:60px;z-index:99;box-shadow:0 2px 8px rgba(192,57,43,0.5)">
+  <span style="font-size:22px">🎁</span>
+  <div style="text-align:center">
+    <div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:0.02em;line-height:1.2">БЕЗКОШТОВНО ДЛЯ ПРОДАВЦІВ ШИН ТА ДИСКІВ</div>
+    <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.85);margin-top:2px">Подавайте оголошення без оплати до 31 серпня 2026 року</div>
+  </div>
+  <span style="font-size:22px">🔥</span>
+</div>
 <div class="hero">
   <div class="hero-title">Ринок шин, дисків та авто-послуг · Звягель</div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
@@ -1114,7 +1122,7 @@ loadPrices();
           </button>
         </div>
         <div style="font-size:11px;color:var(--text-hint);line-height:1.5">
-          Одне оголошення — <b style="color:var(--text-muted)">10 грн</b> · діє 30 днів
+          <span id='balanceInfoText'>Одне оголошення — <b style="color:var(--text-muted)">10 грн</b> · діє 28 днів</span>
         </div>
       </div>
     </div><!-- /modal-body -->
@@ -1342,6 +1350,14 @@ function prepareAddModal(){
     phoneHidden.value='';
   }
   updateBalanceUI();
+  // Оновити текст кнопки і підказку залежно від акції
+  const isPromo = Date.now() <= new Date('2026-08-31T23:59:59').getTime();
+  const infoEl = document.getElementById('balanceInfoText');
+  if(infoEl && adCat!=='service'){
+    infoEl.innerHTML = isPromo
+      ? '🎁 <b style="color:#c0392b">Безкоштовно для шин та дисків до 31.08.2026!</b>'
+      : `Одне оголошення — <b style="color:var(--text-muted)">${PRICES.tire_publish} грн</b> · діє 28 днів`;
+  }
 }
 
 // ═══ ПЕРЕВІРКА СТАТУСІВ ═══
@@ -1491,7 +1507,8 @@ function setAdCat(c){
       const p = svcSelectedKeywords.length===0?70:70+(svcSelectedKeywords.length-1)*30;
       pubBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg> Опублікувати · ${p} грн`;
     } else {
-      pubBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg> Опублікувати · 10 грн`;
+      const isPromo = Date.now() <= new Date('2026-08-31T23:59:59').getTime();
+      pubBtn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:15px;height:15px"><polyline points="20 6 9 17 4 12"/></svg> Опублікувати · ${isPromo?'🎁 Безкоштовно':PRICES.tire_publish+' грн'}`;
     }
   }
   if(c==='service') initSvcKeywords();
@@ -1798,8 +1815,17 @@ async function submitAd(){
   if(!checkField(document.getElementById('aDesc'),'Опис')) return;
   if(!price){document.getElementById('aPrice').focus();toast('Вкажіть ціну');return;}
   if(!currentUser){closeModal('addModal');openModal('loginModal');toast('Увійдіть, щоб подати оголошення');return;}
-  if((currentUser.balance||0)<PRICES.tire_publish){toast('Недостатньо коштів. Потрібно '+PRICES.tire_publish+' грн');openModal('topupModal');return;}
-  currentUser.balance-=PRICES.tire_publish;
+  const isPromoActive = Date.now() <= new Date('2026-08-31T23:59:59').getTime();
+  if(!isPromoActive){
+    if((currentUser.balance||0)<PRICES.tire_publish){
+      toast('Недостатньо коштів. Потрібно '+PRICES.tire_publish+' грн');
+      openModal('topupModal');
+      return;
+    }
+    currentUser.balance-=PRICES.tire_publish;
+    await db.collection('users').doc(currentUser.uid).update({balance:currentUser.balance});
+    updateBalanceUI(); updateHeaderAuth();
+  }
   updateBalanceUI();updateHeaderAuth();
   const now2=Date.now();
   const adData={cat:adCat,type:adType,brand,size,season,cond:adCond,rimMat:adCat==='rim'?rimMat:null,price,qty,city:'Звягель',phone:currentUser.phone,uid:currentUser.uid,desc,photos:[...adPhotos],status:'active',date:now2,expiresAt:now2+PRICES.active_days*86400000,deleteAt:now2+(PRICES.active_days+PRICES.inactive_days)*86400000};
