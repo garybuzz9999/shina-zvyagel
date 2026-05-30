@@ -654,18 +654,19 @@ loadPrices();
   </div>
   <span style="font-size:22px">🔥</span>
 </div>
-<div class="hero">
+<div class="hero" style="position:relative">
   <div class="hero-title">Ринок шин, дисків та авто-послуг · Звягель</div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
     <button class="btn btn-white" id="catTireBtn" onclick="setCat('tire')" style="font-size:12px;padding:6px 14px">🔄 Шини</button>
     <button class="btn btn-ghost" id="catRimBtn" onclick="setCat('rim')" style="font-size:12px;padding:6px 14px;border-color:rgba(245,243,238,0.25)">⭕ Диски</button>
     <button class="btn btn-ghost" id="catSvcBtn" onclick="setCat('service')" style="font-size:12px;padding:6px 14px;border-color:rgba(245,243,238,0.25)">🔧 СТО / Послуги</button>
   </div>
-  <div class="search-wrap">
+  <div class="search-wrap" style="position:relative">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(245,243,238,0.5)" stroke-width="2" style="flex-shrink:0;align-self:center"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-    <input type="text" id="searchInput" placeholder="Пошук: шини, диски, шиномонтаж, СТО, розвал..." oninput="filterCards()">
+    <input type="text" id="searchInput" placeholder="Пошук: шини, диски, шиномонтаж, СТО, розвал..." oninput="onSearchInput(this.value)" autocomplete="off" style="flex:1">
     <button class="btn btn-white" onclick="filterCards()">Знайти</button>
   </div>
+  <div id="autocompleteList" style="display:none;position:absolute;left:0;right:0;background:#fff;border-radius:0 0 10px 10px;box-shadow:0 8px 24px rgba(0,0,0,0.25);z-index:9999;max-height:320px;overflow-y:auto;border:1px solid rgba(0,0,0,0.12);border-top:none;margin-top:-2px"></div>
 </div>
 
 <!-- STATS BAR -->
@@ -2030,7 +2031,87 @@ function removePhoto(i){
   renderPhotoGrid();
 }
 
-// ═══ ЗБЕРЕЖЕННЯ СТАНУ ═══
+// ═══ АВТОДОПОВНЕННЯ ПОШУКУ ═══
+let _acTimer;
+
+function onSearchInput(val){
+  filterCards();
+  clearTimeout(_acTimer);
+  if(val.trim().length < 3){ hideAutocomplete(); return; }
+  _acTimer = setTimeout(()=>showAutocomplete(val.trim().toLowerCase()), 200);
+}
+
+function showAutocomplete(q){
+  const results = [];
+
+  // Шукаємо СТО за ключовими словами
+  const svcMatches = DB.filter(l=>
+    l.cat==='service' &&
+    (l.status||'active')==='active' &&
+    (l.keywords||[]).some(kw=>kw.toLowerCase().includes(q))
+  );
+  if(svcMatches.length){
+    results.push({type:'header', label:'🔧 СТО та послуги'});
+    svcMatches.slice(0,5).forEach(l=>{
+      const matchedKw = (l.keywords||[]).filter(kw=>kw.toLowerCase().includes(q));
+      results.push({type:'svc', id:l.id, brand:l.brand, size:l.size||'Звягель', kw:matchedKw.join(', ')});
+    });
+  }
+
+  // Шукаємо серед брендів шин/дисків
+  const tireMatches = DB.filter(l=>
+    l.cat!=='service' &&
+    (l.status||'active')==='active' &&
+    (l.brand||'').toLowerCase().includes(q)
+  );
+  if(tireMatches.length){
+    results.push({type:'header', label:'🔄 Шини та диски'});
+    // Унікальні бренди
+    const seen = new Set();
+    tireMatches.forEach(l=>{
+      if(!seen.has(l.brand)){ seen.add(l.brand); results.push({type:'tire', brand:l.brand, size:l.size}); }
+    });
+  }
+
+  // Підказки з ключових слів СТО навіть якщо нема оголошень
+  const kwHints = SVC_KEYWORDS.filter(kw=>kw.toLowerCase().includes(q) && !svcMatches.some(l=>(l.keywords||[]).includes(kw)));
+  if(kwHints.length){
+    results.push({type:'header', label:'🔍 Послуги (немає реклами)'});
+    kwHints.slice(0,4).forEach(kw=>results.push({type:'hint', kw}));
+  }
+
+  if(!results.length){ hideAutocomplete(); return; }
+
+  const list = document.getElementById('autocompleteList');
+  list.innerHTML = results.map(r=>{
+    if(r.type==='header') return `<div style="padding:6px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#999;background:#f8f8f8;border-bottom:1px solid #eee">${r.label}</div>`;
+    if(r.type==='svc') return `<div class="ac-item" onmousedown="selectAC('${r.brand.replace(/'/g,"\\'")}');openDetail('${r.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;flex-direction:column;gap:2px"><span style="font-size:13px;font-weight:600;color:#1a1917">${r.brand}</span><span style="font-size:11px;color:#888">${r.size} · ${r.kw}</span></div>`;
+    if(r.type==='tire') return `<div class="ac-item" onmousedown="selectAC('${r.brand.replace(/'/g,"\\'")}');filterCards()" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:#1a1917">${r.brand}</span><span style="font-size:11px;color:#888">${r.size}</span></div>`;
+    if(r.type==='hint') return `<div class="ac-item ac-hint" onmousedown="selectAC('${r.kw}')" style="padding:9px 14px;cursor:pointer;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:#aaa">🔍</span><span style="font-size:13px;color:#bbb">${r.kw}</span><span style="font-size:10px;color:#ddd;margin-left:auto">не рекламується</span></div>`;
+    return '';
+  }).join('');
+  list.style.display='block';
+}
+
+function selectAC(val){
+  document.getElementById('searchInput').value = val;
+  hideAutocomplete();
+  filterCards();
+}
+
+function hideAutocomplete(){
+  const l = document.getElementById('autocompleteList');
+  if(l) l.style.display='none';
+}
+
+// Закриваємо при кліку поза списком
+document.addEventListener('click', function(e){
+  const inp = document.getElementById('searchInput');
+  const list = document.getElementById('autocompleteList');
+  if(inp && list && !inp.contains(e.target) && !list.contains(e.target)){
+    hideAutocomplete();
+  }
+});
 function saveState(){
   try{
     localStorage.setItem('sh_filters', JSON.stringify(filters));
