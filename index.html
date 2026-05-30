@@ -1247,6 +1247,34 @@ loadPrices();
   <span id="toastMsg"></span>
 </div>
 
+<!-- ═══ POPUP BANNER ═══ -->
+<div id="popupBanner" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;align-items:center;justify-content:center;padding:1.5rem">
+  <div style="background:#fff;border-radius:16px;width:100%;max-width:420px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.35);position:relative">
+    <!-- Закрити -->
+    <button onclick="closePopup()" style="position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:none;background:rgba(0,0,0,0.08);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;z-index:1">✕</button>
+    <!-- Зображення/фон -->
+    <div style="background:linear-gradient(135deg,#1a1917 0%,#333 100%);padding:2rem 1.5rem 1.5rem;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">🔧🚗</div>
+      <div style="font-size:20px;font-weight:800;color:#fff;line-height:1.3" id="popupTitle">Реклама вашого СТО</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.7);margin-top:6px" id="popupSubtitle">Розмістіть рекламу — вас знайдуть тисячі клієнтів</div>
+    </div>
+    <!-- Контент -->
+    <div style="padding:1.25rem 1.5rem">
+      <div style="font-size:14px;color:#555;line-height:1.6;margin-bottom:1.25rem" id="popupText">
+        Шукаєте нових клієнтів у Звягелі? Розмістіть оголошення свого СТО або шиномонтажу на нашому майданчику. Вас знайдуть по ключових словах!
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="closePopup()" style="flex:1;padding:11px;border-radius:10px;border:1.5px solid #ddd;background:#fff;font-size:13px;font-weight:600;cursor:pointer;color:#666;font-family:'Manrope',sans-serif">
+          Пізніше
+        </button>
+        <button onclick="popupAction()" style="flex:2;padding:11px;border-radius:10px;border:none;background:#1a1917;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif" id="popupBtn">
+          Подати оголошення →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const S={summer:'Літні',winter:'Зимові',allseason:'Всесезонні'};
 const SI={summer:'☀',winter:'❄',allseason:'☁'};
@@ -1889,7 +1917,176 @@ function toast(msg){
   _toastTimer=setTimeout(()=>el.classList.remove('show'),2800);
 }
 
-// ═══ АНТИМАТЮК ═══
+// ═══ POPUP BANNER ═══
+// Налаштування банерів (можна змінювати в адмінці пізніше)
+const POPUP_BANNERS = [
+  {
+    title: '🎁 БЕЗКОШТОВНО до 31.08.2026!',
+    subtitle: 'Для продавців шин та дисків',
+    text: 'Реєструйтесь і подавайте оголошення про продаж шин та дисків абсолютно безкоштовно до 31 серпня 2026 року!',
+    btnText: 'Подати оголошення →',
+    action: 'add'
+  },
+  {
+    title: '🔧 Реклама вашого СТО',
+    subtitle: 'Знайдіть нових клієнтів у Звягелі',
+    text: 'Розмістіть оголошення свого СТО або шиномонтажу. Клієнти знаходять вас по ключових словах — шиномонтаж, розвал, заміна масла та інші.',
+    btnText: 'Розмістити рекламу →',
+    action: 'add_svc'
+  }
+];
+let _popupIndex = 0;
+let _popupTimer;
+
+async function loadBannerConfig(){
+  try{
+    const snap = await db.collection('config').doc('banner').get();
+    if(snap.exists) window._bannerSettings = snap.data();
+  }catch(e){}
+}
+
+function showPopup(){
+  const s = window._bannerSettings;
+  // Якщо є налаштування з Firebase — використовуємо їх
+  if(s && s.title){
+    document.getElementById('popupTitle').textContent = s.title;
+    document.getElementById('popupSubtitle').textContent = '';
+    document.getElementById('popupText').textContent = s.text||'';
+    document.getElementById('popupBtn').textContent = s.btnText||'Перейти →';
+    document.getElementById('popupBtn').dataset.action = s.url ? 'url:'+s.url : 'add';
+    if(s.image){
+      const bg = document.querySelector('#popupBanner > div > div:first-child');
+      if(bg) bg.style.backgroundImage = `url(${s.image})`;
+    }
+    if(!s.enabled) return; // вимкнено
+  } else {
+    // Дефолтні банери по черзі
+    const banner = POPUP_BANNERS[_popupIndex % POPUP_BANNERS.length];
+    _popupIndex++;
+    document.getElementById('popupTitle').textContent = banner.title;
+    document.getElementById('popupSubtitle').textContent = banner.subtitle;
+    document.getElementById('popupText').textContent = banner.text;
+    document.getElementById('popupBtn').textContent = banner.btnText;
+    document.getElementById('popupBtn').dataset.action = banner.action;
+  }
+  document.getElementById('popupBanner').style.display = 'flex';
+}
+
+function closePopup(){
+  document.getElementById('popupBanner').style.display = 'none';
+  clearTimeout(_popupTimer);
+  const mins = (window._bannerSettings?.interval)||5;
+  _popupTimer = setTimeout(showPopup, mins * 60 * 1000);
+}
+
+function popupAction(){
+  const action = document.getElementById('popupBtn').dataset.action||'';
+  closePopup();
+  if(action.startsWith('url:')){
+    window.open(action.replace('url:',''), '_blank');
+  } else if(action === 'add_svc'){
+    openModal('addModal');
+    setTimeout(()=>setAdCat('service'), 300);
+  } else {
+    openModal('addModal');
+  }
+}
+
+// Завантажити налаштування банера і показати через 3 сек
+loadBannerConfig().then(()=>{
+  setTimeout(()=>{
+    const s = window._bannerSettings;
+    if(!s || s.enabled !== false) showPopup();
+  }, 3000);
+});
+
+// Показати через 3 секунди після завантаження
+setTimeout(()=>{ if(window._bannerSettings && window._bannerSettings.enabled) showPopup(); }, 3000);
+
+// ═══ АДМІН БАНЕР ═══
+let _bannerImg = null;
+
+async function loadBannerAdmin(){
+  try{
+    const snap = await db.collection('config').doc('banner').get();
+    const d = snap.exists ? snap.data() : {};
+    const en = document.getElementById('bannerEnabled');
+    const tog = document.getElementById('bannerToggle');
+    const knob = document.getElementById('bannerKnob');
+    if(en){ en.checked = !!d.enabled; updateToggleUI(!!d.enabled); }
+    const bt = document.getElementById('bannerTitle'); if(bt) bt.value = d.title||'';
+    const btxt = document.getElementById('bannerText'); if(btxt) btxt.value = d.text||'';
+    const bb = document.getElementById('bannerBtnText'); if(bb) bb.value = d.btnText||'';
+    const bu = document.getElementById('bannerUrl'); if(bu) bu.value = d.url||'';
+    const bi = document.getElementById('bannerInterval'); if(bi) bi.value = d.interval||5;
+    if(d.image){
+      const prev = document.getElementById('bannerImgPreview');
+      if(prev) prev.innerHTML = `<img src="${d.image}" style="width:100%;height:100%;object-fit:cover">`;
+      _bannerImg = d.image;
+    }
+  }catch(e){}
+}
+
+function updateToggleUI(on){
+  const tog = document.getElementById('bannerToggle');
+  const knob = document.getElementById('bannerKnob');
+  if(tog) tog.style.background = on ? '#1a1917' : '#ccc';
+  if(knob) knob.style.transform = on ? 'translateX(22px)' : 'translateX(0)';
+}
+
+document.addEventListener('change', function(e){
+  if(e.target.id === 'bannerEnabled') updateToggleUI(e.target.checked);
+});
+
+function loadBannerImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _bannerImg = e.target.result;
+    const prev = document.getElementById('bannerImgPreview');
+    if(prev) prev.innerHTML = `<img src="${_bannerImg}" style="width:100%;height:100%;object-fit:cover;display:block">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveBannerSettings(showToast){
+  const settings = {
+    enabled: document.getElementById('bannerEnabled')?.checked || false,
+    title: document.getElementById('bannerTitle')?.value || '',
+    text: document.getElementById('bannerText')?.value || '',
+    btnText: document.getElementById('bannerBtnText')?.value || '',
+    url: document.getElementById('bannerUrl')?.value || '',
+    interval: parseInt(document.getElementById('bannerInterval')?.value)||5,
+    image: _bannerImg || ''
+  };
+  try{
+    await db.collection('config').doc('banner').set(settings);
+    window._bannerSettings = settings;
+    // Оновити таймер
+    clearTimeout(_popupTimer);
+    if(settings.enabled){
+      _popupTimer = setTimeout(showPopup, settings.interval * 60 * 1000);
+    }
+    if(showToast) toast('✅ Банер збережено!');
+  }catch(e){ if(showToast) toast('Помилка: '+e.message); }
+}
+
+function previewBanner(){
+  // Тимчасово показати банер з поточними даними форми
+  const title = document.getElementById('bannerTitle')?.value || 'Заголовок банера';
+  const text = document.getElementById('bannerText')?.value || 'Текст банера';
+  const btnText = document.getElementById('bannerBtnText')?.value || 'Кнопка';
+  document.getElementById('popupTitle').textContent = title;
+  document.getElementById('popupSubtitle').textContent = '';
+  document.getElementById('popupText').textContent = text;
+  document.getElementById('popupBtn').textContent = btnText;
+  if(_bannerImg){
+    // Замінити фон на картинку
+  }
+  document.getElementById('popupBanner').style.display = 'flex';
+  closeModal('adminModal');
+}
 const BAD_WORDS = [
   // Українські
   'блять','бля','сука','пизд','піzд','піздець','пиздець','хуй','хуя','хуєць','хуєво','єбать','єбан','єбло','йобан','йобать',
@@ -2235,10 +2432,11 @@ document.querySelectorAll('.overlay').forEach(el=>{
     <div id="adminDashSection" style="display:none">
       <!-- TABS -->
       <div style="display:flex;border-bottom:1px solid var(--border)">
-        <button class="admin-tab on" id="tabUsersBtn" onclick="switchAdminTab('users')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--text);font-family:'Manrope',sans-serif">Клієнти</button>
-        <button class="admin-tab" id="tabTopupBtn" onclick="switchAdminTab('topup')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Заявки</button>
-        <button class="admin-tab" id="tabAdsBtn" onclick="switchAdminTab('ads')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Оголошення</button>
-        <button class="admin-tab" id="tabPricesBtn" onclick="switchAdminTab('prices')" style="flex:1;padding:12px;font-size:13px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">💰 Ціни</button>
+        <button class="admin-tab on" id="tabUsersBtn" onclick="switchAdminTab('users')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--text);font-family:'Manrope',sans-serif">Клієнти</button>
+        <button class="admin-tab" id="tabTopupBtn" onclick="switchAdminTab('topup')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Заявки</button>
+        <button class="admin-tab" id="tabAdsBtn" onclick="switchAdminTab('ads')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">Оголошення</button>
+        <button class="admin-tab" id="tabPricesBtn" onclick="switchAdminTab('prices')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">💰 Ціни</button>
+        <button class="admin-tab" id="tabBannerBtn" onclick="switchAdminTab('banner')" style="flex:1;padding:10px 4px;font-size:11px;font-weight:600;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);font-family:'Manrope',sans-serif">🖼 Банер</button>
       </div>
 
       <!-- USERS TAB -->
@@ -2262,6 +2460,75 @@ document.querySelectorAll('.overlay').forEach(el=>{
         <button onclick="savePrices()" style="width:100%;margin-top:1rem;padding:11px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:14px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif">
           💾 Зберегти ціни
         </button>
+      </div>
+
+      <!-- BANNER TAB -->
+      <div id="adminTabBanner" class="modal-body" style="display:none;padding:1rem;max-height:60vh;overflow-y:auto">
+        <!-- Вмикач -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:1rem">
+          <div>
+            <div style="font-size:13px;font-weight:600">Показувати банер</div>
+            <div style="font-size:11px;color:var(--text-muted)">При відкритті та кожні 5 хвилин</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:48px;height:26px;cursor:pointer">
+            <input type="checkbox" id="bannerEnabled" style="opacity:0;width:0;height:0" onchange="saveBannerSettings()">
+            <span id="bannerToggle" style="position:absolute;inset:0;background:#ccc;border-radius:26px;transition:0.3s"></span>
+            <span id="bannerKnob" style="position:absolute;left:3px;top:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:0.3s"></span>
+          </label>
+        </div>
+
+        <!-- Картинка -->
+        <div class="fg">
+          <label class="fl">Картинка банера</label>
+          <input type="file" id="bannerImgFile" accept="image/*" style="display:none" onchange="loadBannerImage(this)">
+          <div id="bannerImgPreview" style="width:100%;height:140px;background:var(--bg-alt);border-radius:var(--radius-sm);border:1.5px dashed var(--border-mid);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;margin-bottom:6px" onclick="document.getElementById('bannerImgFile').click()">
+            <span style="font-size:13px;color:var(--text-hint)">Натисніть щоб завантажити картинку</span>
+          </div>
+          <button onclick="document.getElementById('bannerImgFile').click()" class="btn btn-outline" style="width:100%;justify-content:center;font-size:12px">📁 Вибрати картинку</button>
+        </div>
+
+        <!-- Заголовок -->
+        <div class="fg">
+          <label class="fl">Заголовок</label>
+          <input class="finput" id="bannerTitle" placeholder="Напр. 🎁 БЕЗКОШТОВНО до 31.08.2026!" oninput="saveBannerSettings()">
+        </div>
+
+        <!-- Текст -->
+        <div class="fg">
+          <label class="fl">Текст</label>
+          <textarea class="finput" id="bannerText" rows="2" placeholder="Опис акції або реклами..." style="resize:vertical" oninput="saveBannerSettings()"></textarea>
+        </div>
+
+        <!-- Текст кнопки -->
+        <div class="fg">
+          <label class="fl">Текст кнопки</label>
+          <input class="finput" id="bannerBtnText" placeholder="Напр. Дізнатись більше →" oninput="saveBannerSettings()">
+        </div>
+
+        <!-- URL переходу -->
+        <div class="fg">
+          <label class="fl">Посилання (URL) для кнопки</label>
+          <input class="finput" id="bannerUrl" placeholder="https://... або залиште порожнім для форми оголошення" oninput="saveBannerSettings()">
+          <div style="font-size:11px;color:var(--text-hint);margin-top:4px">Якщо порожнє — відкриває форму подачі оголошення</div>
+        </div>
+
+        <!-- Інтервал -->
+        <div class="fg">
+          <label class="fl">Показувати кожні (хвилин)</label>
+          <select class="finput" id="bannerInterval" onchange="saveBannerSettings()">
+            <option value="1">1 хвилина (тест)</option>
+            <option value="5" selected>5 хвилин</option>
+            <option value="10">10 хвилин</option>
+            <option value="30">30 хвилин</option>
+            <option value="60">1 година</option>
+          </select>
+        </div>
+
+        <!-- Прев'ю і зберегти -->
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button onclick="previewBanner()" class="btn btn-outline" style="flex:1;justify-content:center">👁 Прев'ю</button>
+          <button onclick="saveBannerSettings(true)" style="flex:1;padding:10px;border-radius:var(--radius-sm);border:none;background:var(--accent);color:var(--accent-text);font-size:13px;font-weight:700;cursor:pointer;font-family:'Manrope',sans-serif">💾 Зберегти</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2290,7 +2557,7 @@ function checkAdminPass(){
 }
 
 function switchAdminTab(tab){
-  ['users','topup','ads','prices'].forEach(t=>{
+  ['users','topup','ads','prices','banner'].forEach(t=>{
     const tabEl = document.getElementById('adminTab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(tabEl) tabEl.style.display = t===tab?'block':'none';
     const btn = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)+'Btn');
@@ -2303,6 +2570,7 @@ function switchAdminTab(tab){
   if(tab==='topup') renderAdminTopup();
   if(tab==='ads')   renderAdminAds();
   if(tab==='prices') renderAdminPrices();
+  if(tab==='banner') loadBannerAdmin();
 }
 
 function renderAdminPrices(){
