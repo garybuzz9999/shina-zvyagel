@@ -575,14 +575,19 @@ loadPrices();
     .sidebar { display: none; }
     .hero { padding: 1.25rem 1rem; }
     .main { padding: 1rem; }
-    header { padding: 0 1rem; }
+    header { padding: 0 0.75rem; height: 56px; }
+    .logo { font-size: 13px; gap: 6px; }
+    .logo svg { width: 18px; height: 18px; }
     .stats-bar { padding: 0.6rem 1rem; }
     .grid { grid-template-columns: 1fr 1fr; }
     .btn-ghost { display: none; }
+    .btn-white { padding: 7px 10px; font-size: 12px; }
+    .btn-white svg { display: none; }
     footer { flex-direction: column; gap: 4px; text-align: center; }
   }
-  @media (max-width: 360px) {
-    .grid { grid-template-columns: 1fr; }
+  @media (max-width: 400px) {
+    .logo span { display: none; }
+    .grid { grid-template-columns: 1fr 1fr; }
   }
   .photo-thumb {
     aspect-ratio: 1;
@@ -624,19 +629,15 @@ loadPrices();
       <line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
       <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
     </svg>
-    ШиноМаркет · Шини та Диски
+    <span>ШиноМаркет · Шини та Диски</span>
   </a>
-  <div style="display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;border:1px solid rgba(245,243,238,0.2);font-size:12px;font-weight:600;color:rgba(245,243,238,0.85)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    Звягель
-  </div>
   <div class="header-right">
-    <button class="btn btn-ghost" onclick="openModal('loginModal')">
+    <button class="btn btn-ghost" id="authBtn" onclick="openModal('loginModal')" style="font-size:12px;padding:6px 12px">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       Увійти
     </button>
-    <button class="btn btn-white" onclick="openModal('addModal')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <button class="btn btn-white" onclick="openModal('addModal')" style="font-size:12px;padding:8px 12px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Подати оголошення
     </button>
   </div>
