@@ -42,11 +42,11 @@
 <script>
 // ═══ ЦІНИ (змінюються в адмінці) ═══
 let PRICES = {
-  tire_publish: 10,        // публікація шини/диска
-  tire_renew: 10,          // продовження шини/диска
+  tire_publish: 0,        // публікація шини/диска
+  tire_renew: 0,          // продовження шини/диска
   svc_first_kw: 70,        // перше ключове слово СТО
   svc_extra_kw: 30,        // кожне наступне ключове слово
-  svc_renew: 60,           // продовження всіх оголошень СТО/місяць
+  svc_renew: 0,           // продовження всіх оголошень СТО/місяць
   svc_map: 25,             // карта для СТО
   active_days: 28,         // днів активне
   inactive_days: 28,       // днів неактивне (перед видаленням)
@@ -1139,7 +1139,7 @@ loadPrices();
 </div>
 
 <!-- ═══ TOPUP MODAL ═══ -->
-<div class="overlay" id="topupModal" onclick="closeOverlay(event,'topupModal')">
+<div class="overlay" id="topupModal" style="display:none!important" onclick="closeOverlay(event,'topupModal')">
   <div class="modal modal-sm" onclick="event.stopPropagation()">
     <div class="modal-head">
       <h2>Поповнити рахунок</h2>
