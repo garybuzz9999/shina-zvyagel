@@ -1301,7 +1301,7 @@ async function doLogin(){
   if(!phone){toast('Введіть телефон');return;}
   if(!pass){toast('Введіть пароль');return;}
   // використовуємо телефон як email: phone@shina.zvyagel
-  const fakeEmail = phone.replace(/\D/g,'')+`@shina.zvyagel`;
+  const fakeEmail = phone.replace(/\D/g,'')+`@zvyagel.online`;
   try{
     await auth.signInWithEmailAndPassword(fakeEmail, pass);
     closeModal('loginModal');
@@ -1319,7 +1319,7 @@ async function doRegister(){
   if(containsBadWords(name)){toast('⚠️ Ім\'я містить недопустимі слова');document.getElementById('regName').focus();return;}
   if(!phone||phone.length<10){toast('Введіть правильний телефон');return;}
   if(!pass||pass.length<6){toast('Пароль мінімум 6 символів');return;}
-  const fakeEmail = phone.replace(/\D/g,'')+`@shina.zvyagel`;
+  const fakeEmail = phone.replace(/\D/g,'')+`@zvyagel.online`;
   try{
     const cred = await auth.createUserWithEmailAndPassword(fakeEmail, pass);
     await db.collection('users').doc(cred.user.uid).set({name,phone,balance:0,blocked:false,createdAt:Date.now()});
